@@ -113,6 +113,67 @@ iOS builds require Xcode and can only be produced on macOS. If you're on
 Windows/Linux, you can still switch the active platform and validate project
 settings, but you cannot produce a signed `.ipa` without a macOS + Xcode step.
 
+## CI/CD: Android build via GitHub Actions
+
+`.github/workflows/android-build.yml` builds an Android `.apk` on GitHub's
+hosted runners using [`game-ci/unity-builder`](https://game.ci/), which runs
+Unity inside a Docker image. **No local Unity install is required** — Unity
+only runs inside the GitHub Actions runner.
+
+This needs a Unity license available as repository secrets. That's a one-time
+setup per Unity account:
+
+### One-time setup: get a Unity license for CI
+
+Unity requires an active license to run, even in CI. For a free Unity Personal
+account:
+
+1. **Generate an activation request file.** In this repo's GitHub page, go to
+   **Actions > Request Unity Activation File > Run workflow**. This runs
+   `.github/workflows/request-activation-file.yml`, which spins up the Unity
+   Docker image just to produce a `.alf` request file — still no local Unity
+   needed.
+2. When the run finishes, open it and download the **`unity-activation-file`**
+   artifact. Unzip it; you'll have a file like `Unity_v6000.x.alf`.
+3. Go to **https://license.unity3d.com/manual**, upload that `.alf` file, and
+   choose **Unity Personal** (or your license type). Unity emails/generates a
+   `.ulf` license file back — download it.
+4. In this repo, go to **Settings > Secrets and variables > Actions > New
+   repository secret** and add:
+   - `UNITY_LICENSE` — paste the **entire contents** of the downloaded `.ulf`
+     file (open it in a text editor and copy everything, including the XML
+     tags).
+   - `UNITY_EMAIL` — the email of the Unity account used above.
+   - `UNITY_PASSWORD` — that account's password.
+
+   (If you have a Unity Pro/Plus seat instead, you can use a `UNITY_SERIAL`
+   secret and skip the `.alf`/`.ulf` dance — see the game-ci docs linked
+   above.)
+
+You only need to do this once; the same secrets are reused by every build.
+
+### Getting the APK
+
+Once the secrets are set:
+
+1. Go to the **Actions** tab of this repository.
+2. Select **Android Build** in the left sidebar, then click **Run workflow**
+   (or just push a commit to `main`/`master`, or open a PR against them — both
+   trigger it automatically).
+3. Wait for the run to finish (the first build imports everything from
+   scratch and is slow, ~15-25 min; later builds reuse a cached `Library/`
+   folder and are much faster).
+4. Open the finished run and scroll down to **Artifacts**. Download
+   **`Hidden-Android-apk`** — it's a zip containing the `.apk`.
+5. Unzip it, copy the `.apk` to your Android phone (e.g. via USB, a cloud
+   drive, or `adb install path/to/file.apk`), and install it. You'll need to
+   allow "install from unknown sources" for whichever app you use to open it,
+   since it isn't signed for the Play Store.
+
+The workflow builds an unsigned debug-style APK suitable for testing on your
+own device. Play Store distribution would additionally require a signing
+keystore, which is out of scope for this foundation milestone.
+
 ## Current milestone — M0.1
 
 M0.1 establishes the technical foundation only: project structure, a minimal

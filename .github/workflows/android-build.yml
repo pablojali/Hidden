@@ -1,0 +1,56 @@
+name: Android Build
+
+# Builds an Android .apk from this Unity project entirely on GitHub-hosted
+# runners, using the game-ci/unity-builder Docker image. No local Unity
+# installation is required to produce or fetch the build.
+#
+# Requires three repository secrets before this can run successfully:
+#   UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD
+# See README.md > "CI/CD: Android build via GitHub Actions" for how to obtain them.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch: {}
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-Android-
+            Library-
+
+      - name: Build Android APK
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: 6000.3.0f1
+          targetPlatform: Android
+          buildName: Hidden
+          androidExportType: androidPackage
+          buildsPath: build
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hidden-Android-apk
+          path: build/Android
+          retention-days: 14
