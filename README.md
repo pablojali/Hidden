@@ -117,40 +117,57 @@ settings, but you cannot produce a signed `.ipa` without a macOS + Xcode step.
 
 `.github/workflows/android-build.yml` builds an Android `.apk` on GitHub's
 hosted runners using [`game-ci/unity-builder`](https://game.ci/), which runs
-Unity inside a Docker image. **No local Unity install is required** — Unity
-only runs inside the GitHub Actions runner.
+Unity inside a Docker image — the actual build (importing assets, compiling,
+packaging the APK) happens entirely on GitHub's servers, not on your machine.
 
-This needs a Unity license available as repository secrets. That's a one-time
-setup per Unity account:
+This needs a Unity license available as repository secrets. Getting that
+license now requires one lightweight local step, because **Unity discontinued
+manual web-based activation for Personal licenses** (the old
+`license.unity3d.com/manual` `.alf`-upload flow this README previously
+described no longer works, which is also why the old
+`unity-request-activation-file` GitHub Action was retired). You do **not**
+need to install the full Unity Editor or any platform modules locally —
+only the small Unity Hub application.
 
 ### One-time setup: get a Unity license for CI
 
-Unity requires an active license to run, even in CI. For a free Unity Personal
-account:
+1. **Install Unity Hub** (not the Editor) from
+   https://unity.com/download — it's a small installer (well under 500 MB),
+   separate from any specific Editor version.
+2. Open Unity Hub and sign in with (or create) a free Unity account.
+3. In Unity Hub, open license management — currently under the Hub's gear/
+   profile menu as **"Manage licenses"** (wording may vary slightly by Hub
+   version) — and add a new **Unity Personal** license (free, non-commercial
+   use). This activates a license on your machine.
+4. Unity writes an activated license file to disk. Look for a file named
+   `Unity_lic.ulf`:
+   - **Windows:** `C:\ProgramData\Unity\Unity_lic.ulf`
+   - **macOS:** `/Library/Application Support/Unity/Unity_lic.ulf`
+   - **Linux:** search your home folder for `Unity_lic.ulf` (location varies
+     by distro/Hub version) — e.g. `~/.local/share/unity3d/Unity/Unity_lic.ulf`.
 
-1. **Generate an activation request file.** In this repo's GitHub page, go to
-   **Actions > Request Unity Activation File > Run workflow**. This runs
-   `.github/workflows/request-activation-file.yml`, which spins up the Unity
-   Docker image just to produce a `.alf` request file — still no local Unity
-   needed.
-2. When the run finishes, open it and download the **`unity-activation-file`**
-   artifact. Unzip it; you'll have a file like `Unity_v6000.x.alf`.
-3. Go to **https://license.unity3d.com/manual**, upload that `.alf` file, and
-   choose **Unity Personal** (or your license type). Unity emails/generates a
-   `.ulf` license file back — download it.
-4. In this repo, go to **Settings > Secrets and variables > Actions > New
+   If you can't find it, opening any Unity Editor version once (even briefly)
+   after adding the license in Hub will ensure it's written.
+5. In this repo, go to **Settings > Secrets and variables > Actions > New
    repository secret** and add:
-   - `UNITY_LICENSE` — paste the **entire contents** of the downloaded `.ulf`
-     file (open it in a text editor and copy everything, including the XML
-     tags).
-   - `UNITY_EMAIL` — the email of the Unity account used above.
+   - `UNITY_LICENSE` — paste the **entire contents** of `Unity_lic.ulf`
+     (open it in a text editor and copy everything, including the XML tags).
+   - `UNITY_EMAIL` — the Unity account email used above.
    - `UNITY_PASSWORD` — that account's password.
 
-   (If you have a Unity Pro/Plus seat instead, you can use a `UNITY_SERIAL`
-   secret and skip the `.alf`/`.ulf` dance — see the game-ci docs linked
-   above.)
+   (If you have a Unity Pro/Plus seat instead, use a `UNITY_SERIAL` secret —
+   see the [game-ci activation docs](https://game.ci/docs/github/activation)
+   for that path.)
 
-You only need to do this once; the same secrets are reused by every build.
+You only need to do this once; the same secrets are reused by every build,
+and you can uninstall Unity Hub afterward if you like — nothing further runs
+locally.
+
+> This area of the Unity/game-ci ecosystem has changed more than once
+> recently, so if a step above doesn't match what you see on screen, treat
+> the goal (an activated `Unity_lic.ulf` file) as the target and follow
+> Unity Hub's current on-screen flow, or check
+> https://game.ci/docs/github/activation for the latest wording.
 
 ### Getting the APK
 

@@ -1,12 +1,14 @@
 name: Android Build
 
 # Builds an Android .apk from this Unity project entirely on GitHub-hosted
-# runners, using the game-ci/unity-builder Docker image. No local Unity
-# installation is required to produce or fetch the build.
+# runners, using the game-ci/unity-builder Docker image. The build itself
+# runs on GitHub's servers, not locally.
 #
 # Requires three repository secrets before this can run successfully:
 #   UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD
-# See README.md > "CI/CD: Android build via GitHub Actions" for how to obtain them.
+# See README.md > "CI/CD: Android build via GitHub Actions" for how to obtain
+# them (a one-time local Unity Hub license activation is required now that
+# Unity has retired manual web-based activation for Personal licenses).
 
 on:
   push:
