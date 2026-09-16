@@ -120,8 +120,8 @@ PlayerSettings:
   androidTargetSdkVersion: 0
   androidMinSdkVersion: 24
   androidPreferredInstallLocation: 1
-  androidArchitectures: 5
-  androidTargetArchitectures: 5
+  androidArchitectures: 2
+  androidTargetArchitectures: 2
   androidSplashScreenScale: 0
   androidKeystoreName:
   androidKeyaliasName:
