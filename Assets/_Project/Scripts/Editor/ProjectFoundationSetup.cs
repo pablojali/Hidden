@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.Rendering;
+using UnityEditor.Rendering.Universal;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -126,6 +127,19 @@ namespace Hidden.EditorTools
                 pipelineAsset = UniversalRenderPipelineAsset.Create(rendererData);
                 AssetDatabase.CreateAsset(pipelineAsset, PipelineAssetPath);
             }
+
+            // Creating UniversalRendererData/UniversalRenderPipelineAsset via
+            // script (as opposed to the Editor's Create > Rendering menu)
+            // leaves their internal utility shader references (blit, copy
+            // depth, etc.) null - the menu path populates them via this same
+            // reloader as part of asset creation. On device this diagnosed
+            // as RenderPipelineManager.currentPipeline staying null forever
+            // despite the asset being correctly assigned everywhere: URP
+            // silently failed to construct the actual pipeline instance,
+            // which is consistent with a null shader reference blowing up
+            // inside the renderer's setup. Explicitly reload them here.
+            ResourceReloader.ReloadAllNullIn(rendererData, "Packages/com.unity.render-pipelines.universal");
+            ResourceReloader.ReloadAllNullIn(pipelineAsset, "Packages/com.unity.render-pipelines.universal");
 
             pipelineAsset.msaaSampleCount = 2;
             pipelineAsset.renderScale = 1f;
