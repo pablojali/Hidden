@@ -1,8 +1,10 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -150,6 +152,31 @@ namespace Hidden.EditorTools
         public void OnPreprocessBuild(BuildReport report)
         {
             ProjectFoundationSetup.EnsureSetup();
+        }
+    }
+
+    // This foundation project uses exactly one shader (the ground material's
+    // Universal Render Pipeline/Lit). Every other shader that ships with the
+    // URP package by default (particles, terrain, speed tree, decals, etc.)
+    // is unused here but still gets its full keyword combinatorics compiled
+    // unless explicitly stripped, which is what previously produced tens of
+    // thousands of shader variants and multi-hour CI builds. This strips
+    // every shader that isn't URP core or a Unity-internal utility shader
+    // down to zero variants, leaving the one shader this project actually
+    // uses untouched.
+    internal sealed class ProjectFoundationShaderStripper : IPreprocessShaders
+    {
+        public int callbackOrder => 100;
+
+        public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
+        {
+            var name = shader.name;
+            if (name.StartsWith("Universal Render Pipeline/") || name.StartsWith("Hidden/"))
+            {
+                return;
+            }
+
+            data.Clear();
         }
     }
 }
