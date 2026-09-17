@@ -1,9 +1,7 @@
 {
     "name": "Hidden.Runtime",
     "rootNamespace": "Hidden",
-    "references": [
-        "Unity.RenderPipelines.Universal.Runtime"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
