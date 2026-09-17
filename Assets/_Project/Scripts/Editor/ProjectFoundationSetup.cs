@@ -63,14 +63,18 @@ namespace Hidden.EditorTools
             // single directional light and no shadows/mixed lighting, but the
             // default URP asset enables features (additional lights, shadows,
             // reflection probes) that multiply compiled shader variants into
-            // the tens of thousands and make CI builds take hours.
+            // the tens of thousands and make CI builds take hours. These are
+            // read-only via the public API in this URP version, so they're set
+            // through the serialized fields instead.
             pipelineAsset.shadowCascadeCount = 1;
-            pipelineAsset.supportsMainLightShadows = false;
-            pipelineAsset.supportsAdditionalLightShadows = false;
-            pipelineAsset.additionalLightsRenderingMode = LightRenderingMode.Disabled;
-            pipelineAsset.supportsMixedLighting = false;
-            pipelineAsset.reflectionProbeBlending = false;
-            pipelineAsset.reflectionProbeBoxProjection = false;
+            var serializedPipelineAsset = new SerializedObject(pipelineAsset);
+            SetBoolIfPresent(serializedPipelineAsset, "m_MainLightShadowsSupported", false);
+            SetIntIfPresent(serializedPipelineAsset, "m_AdditionalLightsRenderingMode", 0);
+            SetBoolIfPresent(serializedPipelineAsset, "m_AdditionalLightShadowsSupported", false);
+            SetBoolIfPresent(serializedPipelineAsset, "m_MixedLightingSupported", false);
+            SetBoolIfPresent(serializedPipelineAsset, "m_ReflectionProbeBlending", false);
+            SetBoolIfPresent(serializedPipelineAsset, "m_ReflectionProbeBoxProjection", false);
+            serializedPipelineAsset.ApplyModifiedPropertiesWithoutUndo();
 
             if (GraphicsSettings.defaultRenderPipeline != pipelineAsset)
             {
@@ -91,6 +95,28 @@ namespace Hidden.EditorTools
 
             EditorUtility.SetDirty(pipelineAsset);
             AssetDatabase.SaveAssets();
+        }
+
+        private static void SetBoolIfPresent(SerializedObject serializedObject, string propertyName, bool value)
+        {
+            var property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                Debug.LogWarning($"ProjectFoundationSetup: URP asset has no property '{propertyName}'; skipping.");
+                return;
+            }
+            property.boolValue = value;
+        }
+
+        private static void SetIntIfPresent(SerializedObject serializedObject, string propertyName, int value)
+        {
+            var property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                Debug.LogWarning($"ProjectFoundationSetup: URP asset has no property '{propertyName}'; skipping.");
+                return;
+            }
+            property.intValue = value;
         }
 
         private static void EnsureGroundMaterial()
