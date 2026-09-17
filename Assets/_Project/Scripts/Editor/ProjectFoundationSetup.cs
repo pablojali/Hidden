@@ -1,12 +1,18 @@
 #if UNITY_EDITOR
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace Hidden.EditorTools
 {
+    // Runs on two triggers, because neither alone is reliable everywhere:
+    // - [InitializeOnLoad] + delayCall covers opening the project interactively.
+    // - IPreprocessBuildWithReport covers headless/CI builds (-batchmode), where
+    //   delayCall is not guaranteed to fire before the build runs.
     [InitializeOnLoad]
     internal static class ProjectFoundationSetup
     {
@@ -19,7 +25,7 @@ namespace Hidden.EditorTools
             EditorApplication.delayCall += EnsureSetup;
         }
 
-        private static void EnsureSetup()
+        public static void EnsureSetup()
         {
             EnsureRenderPipeline();
             EnsureGroundMaterial();
@@ -95,6 +101,16 @@ namespace Hidden.EditorTools
                 EditorUtility.SetDirty(material);
                 AssetDatabase.SaveAssets();
             }
+        }
+    }
+
+    internal sealed class ProjectFoundationBuildPreprocessor : IPreprocessBuildWithReport
+    {
+        public int callbackOrder => 0;
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            ProjectFoundationSetup.EnsureSetup();
         }
     }
 }
