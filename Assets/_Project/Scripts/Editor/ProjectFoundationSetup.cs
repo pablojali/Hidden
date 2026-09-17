@@ -61,22 +61,17 @@ namespace Hidden.EditorTools
             pipelineAsset.supportsCameraDepthTexture = false;
             pipelineAsset.supportsCameraOpaqueTexture = false;
 
-            // Keep the shader-variant space small: this foundation scene has a
-            // single directional light and no shadows/mixed lighting, but the
-            // default URP asset enables features (additional lights, shadows,
-            // reflection probes) that multiply compiled shader variants into
-            // the tens of thousands and make CI builds take hours. These are
-            // read-only via the public API in this URP version, so they're set
-            // through the serialized fields instead.
-            pipelineAsset.shadowCascadeCount = 1;
-            var serializedPipelineAsset = new SerializedObject(pipelineAsset);
-            SetBoolIfPresent(serializedPipelineAsset, "m_MainLightShadowsSupported", false);
-            SetIntIfPresent(serializedPipelineAsset, "m_AdditionalLightsRenderingMode", 0);
-            SetBoolIfPresent(serializedPipelineAsset, "m_AdditionalLightShadowsSupported", false);
-            SetBoolIfPresent(serializedPipelineAsset, "m_MixedLightingSupported", false);
-            SetBoolIfPresent(serializedPipelineAsset, "m_ReflectionProbeBlending", false);
-            SetBoolIfPresent(serializedPipelineAsset, "m_ReflectionProbeBoxProjection", false);
-            serializedPipelineAsset.ApplyModifiedPropertiesWithoutUndo();
+            // Deliberately NOT touching shadow/additional-light/reflection-
+            // probe feature flags here anymore. They were being poked via
+            // SerializedObject on internal field names (m_MainLightShadowsSupported
+            // etc.) as a shader-variant-count optimization, and every build
+            // since that landed rendered a solid black screen on device with
+            // no error anywhere in the build log - consistent with one of
+            // those blind field writes corrupting something Unity's default
+            // URP asset otherwise gets right. The IPreprocessShaders stripper
+            // below already collapses the shader variant count without
+            // needing this, so it's not worth the risk: leave the pipeline
+            // asset's feature flags at Unity's own defaults.
 
             if (GraphicsSettings.defaultRenderPipeline != pipelineAsset)
             {
@@ -97,28 +92,6 @@ namespace Hidden.EditorTools
 
             EditorUtility.SetDirty(pipelineAsset);
             AssetDatabase.SaveAssets();
-        }
-
-        private static void SetBoolIfPresent(SerializedObject serializedObject, string propertyName, bool value)
-        {
-            var property = serializedObject.FindProperty(propertyName);
-            if (property == null)
-            {
-                Debug.LogWarning($"ProjectFoundationSetup: URP asset has no property '{propertyName}'; skipping.");
-                return;
-            }
-            property.boolValue = value;
-        }
-
-        private static void SetIntIfPresent(SerializedObject serializedObject, string propertyName, int value)
-        {
-            var property = serializedObject.FindProperty(propertyName);
-            if (property == null)
-            {
-                Debug.LogWarning($"ProjectFoundationSetup: URP asset has no property '{propertyName}'; skipping.");
-                return;
-            }
-            property.intValue = value;
         }
 
         private static void EnsureGroundMaterial()
