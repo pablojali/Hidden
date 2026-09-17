@@ -29,8 +29,25 @@ namespace Hidden.EditorTools
 
         public static void EnsureSetup()
         {
+            EnsureAndroidGraphicsApi();
             EnsureRenderPipeline();
             EnsureGroundMaterial();
+        }
+
+        // Every fix aimed at the URP asset/shader variants landed clean in
+        // CI (no compile errors, no exceptions, real variant counts, URP
+        // confirmed active) and the device still showed solid black every
+        // time - none of it was the actual cause. The build compiles for
+        // both Vulkan and OpenGLES3; if the device picks Vulkan and hits a
+        // driver-level rendering problem there, that would produce exactly
+        // this symptom (silent black screen, nothing wrong visible from the
+        // build side) and has nothing to do with anything above. Forces
+        // OpenGLES3 only, which is the more universally compatible option,
+        // to rule this out.
+        private static void EnsureAndroidGraphicsApi()
+        {
+            PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.Android, false);
+            PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { GraphicsDeviceType.OpenGLES3 });
         }
 
         private static void EnsureRenderPipeline()
