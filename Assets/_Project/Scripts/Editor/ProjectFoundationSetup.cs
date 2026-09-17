@@ -160,18 +160,12 @@ namespace Hidden.EditorTools
     // occlusion, or URP 17's Forward+ light clustering - but by default URP
     // compiles the full keyword combinatorics for all of that anyway, which
     // is what produced tens of thousands of shader variants and multi-hour
-    // CI builds. A previous attempt exempted shaders named
-    // "Universal Render Pipeline/*" from stripping, which accidentally
-    // protected the one shader actually in use (URP/Lit) - the likely
-    // biggest contributor. This strips by keyword instead, shader by
-    // shader, so the ground material's own shader is stripped too; a hard
-    // per-shader cap is kept underneath as a backstop in case some other,
-    // unanticipated keyword family is still inflating the count.
+    // CI builds. Strips by keyword, shader by shader (including the ground
+    // material's own URP/Lit shader), removing only variants that provably
+    // cannot be reached given this project's fixed set of disabled features.
     internal sealed class ProjectFoundationShaderStripper : IPreprocessShaders
     {
         public int callbackOrder => 100;
-
-        private const int MaxVariantsPerShaderPass = 16;
 
         private static readonly string[] UnneededKeywords =
         {
@@ -203,17 +197,18 @@ namespace Hidden.EditorTools
 
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
         {
+            // Only remove variants that enable a keyword this scene doesn't
+            // need. The blind numeric cap this used to fall back to (keep
+            // only the first N variants regardless of which) turned the
+            // screen solid black on device: for some URP-internal shader,
+            // the specific variant Unity actually needed at runtime landed
+            // past that cutoff and got discarded along with the truly
+            // unused ones. Keyword-based removal only ever drops variants
+            // this project provably cannot reach, so it can't remove the
+            // one actually in use.
             for (var i = data.Count - 1; i >= 0; i--)
             {
                 if (HasUnneededKeyword(shader, data[i]))
-                {
-                    data.RemoveAt(i);
-                }
-            }
-
-            if (data.Count > MaxVariantsPerShaderPass)
-            {
-                for (var i = data.Count - 1; i >= MaxVariantsPerShaderPass; i--)
                 {
                     data.RemoveAt(i);
                 }
