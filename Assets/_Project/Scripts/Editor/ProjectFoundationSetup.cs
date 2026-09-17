@@ -155,28 +155,92 @@ namespace Hidden.EditorTools
         }
     }
 
-    // This foundation project uses exactly one shader (the ground material's
-    // Universal Render Pipeline/Lit). Every other shader that ships with the
-    // URP package by default (particles, terrain, speed tree, decals, etc.)
-    // is unused here but still gets its full keyword combinatorics compiled
-    // unless explicitly stripped, which is what previously produced tens of
-    // thousands of shader variants and multi-hour CI builds. This strips
-    // every shader that isn't URP core or a Unity-internal utility shader
-    // down to zero variants, leaving the one shader this project actually
-    // uses untouched.
+    // This foundation scene needs none of: shadows, extra lights beyond the
+    // one directional light, lightmaps, reflection probes, screen-space
+    // occlusion, or URP 17's Forward+ light clustering - but by default URP
+    // compiles the full keyword combinatorics for all of that anyway, which
+    // is what produced tens of thousands of shader variants and multi-hour
+    // CI builds. A previous attempt exempted shaders named
+    // "Universal Render Pipeline/*" from stripping, which accidentally
+    // protected the one shader actually in use (URP/Lit) - the likely
+    // biggest contributor. This strips by keyword instead, shader by
+    // shader, so the ground material's own shader is stripped too; a hard
+    // per-shader cap is kept underneath as a backstop in case some other,
+    // unanticipated keyword family is still inflating the count.
     internal sealed class ProjectFoundationShaderStripper : IPreprocessShaders
     {
         public int callbackOrder => 100;
 
+        private const int MaxVariantsPerShaderPass = 16;
+
+        private static readonly string[] UnneededKeywords =
+        {
+            "_MAIN_LIGHT_SHADOWS",
+            "_MAIN_LIGHT_SHADOWS_CASCADE",
+            "_MAIN_LIGHT_SHADOWS_SCREEN",
+            "_ADDITIONAL_LIGHTS_VERTEX",
+            "_ADDITIONAL_LIGHTS",
+            "_ADDITIONAL_LIGHT_SHADOWS",
+            "_SHADOWS_SOFT",
+            "_SHADOWS_SOFT_LOW",
+            "_SHADOWS_SOFT_MEDIUM",
+            "_SHADOWS_SOFT_HIGH",
+            "_MIXED_LIGHTING_SUBTRACTIVE",
+            "LIGHTMAP_ON",
+            "LIGHTMAP_SHADOW_MIXING",
+            "DIRLIGHTMAP_COMBINED",
+            "DYNAMICLIGHTMAP_ON",
+            "_REFLECTION_PROBE_BLENDING",
+            "_REFLECTION_PROBE_BOX_PROJECTION",
+            "_REFLECTION_PROBE_ATLAS",
+            "_SCREEN_SPACE_OCCLUSION",
+            "_LIGHT_LAYERS",
+            "_LIGHT_COOKIES",
+            "_FORWARD_PLUS",
+            "_CLUSTER_LIGHT_LOOP",
+            "_CLUSTERED_RENDERING",
+        };
+
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
         {
-            var name = shader.name;
-            if (name.StartsWith("Universal Render Pipeline/") || name.StartsWith("Hidden/"))
+            for (var i = data.Count - 1; i >= 0; i--)
             {
-                return;
+                if (HasUnneededKeyword(shader, data[i]))
+                {
+                    data.RemoveAt(i);
+                }
             }
 
-            data.Clear();
+            if (data.Count > MaxVariantsPerShaderPass)
+            {
+                for (var i = data.Count - 1; i >= MaxVariantsPerShaderPass; i--)
+                {
+                    data.RemoveAt(i);
+                }
+            }
+        }
+
+        private static bool HasUnneededKeyword(Shader shader, ShaderCompilerData variant)
+        {
+            foreach (var keywordName in UnneededKeywords)
+            {
+                ShaderKeyword keyword;
+                try
+                {
+                    keyword = new ShaderKeyword(shader, keywordName);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                if (variant.shaderKeywordSet.IsEnabled(keyword))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
