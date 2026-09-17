@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.Rendering;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -27,11 +28,64 @@ namespace Hidden.EditorTools
             EditorApplication.delayCall += EnsureSetup;
         }
 
+        private const string BootstrapScenePath = "Assets/_Project/Scenes/Bootstrap.unity";
+
         public static void EnsureSetup()
         {
             EnsureAndroidGraphicsApi();
             EnsureRenderPipeline();
             EnsureGroundMaterial();
+            EnsureCameraData();
+        }
+
+        // The Bootstrap scene's Main Camera was hand-authored before URP was
+        // ever actually active, so it never got the
+        // UniversalAdditionalCameraData component Unity normally attaches
+        // to every camera as soon as URP is the active pipeline. The Editor
+        // quietly falls back to defaults for a camera missing this
+        // component, but a built Player apparently does not: on device the
+        // camera rendered nothing at all (not even its clear color), while
+        // everything else - including IMGUI, which doesn't go through the
+        // camera - worked fine. Adds the component directly to the saved
+        // scene so it's baked in regardless of when in the build pipeline
+        // this runs.
+        private static void EnsureCameraData()
+        {
+            var scene = EditorSceneManager.GetSceneByPath(BootstrapScenePath);
+            var openedHere = false;
+
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                scene = EditorSceneManager.OpenScene(BootstrapScenePath, OpenSceneMode.Additive);
+                openedHere = true;
+            }
+
+            var changed = false;
+            foreach (var rootObject in scene.GetRootGameObjects())
+            {
+                var camera = rootObject.GetComponentInChildren<Camera>(true);
+                if (camera == null)
+                {
+                    continue;
+                }
+
+                if (camera.GetComponent<UniversalAdditionalCameraData>() == null)
+                {
+                    camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+            }
+
+            if (openedHere)
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
         }
 
         // Every fix aimed at the URP asset/shader variants landed clean in
