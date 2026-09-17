@@ -59,6 +59,19 @@ namespace Hidden.EditorTools
             pipelineAsset.supportsCameraDepthTexture = false;
             pipelineAsset.supportsCameraOpaqueTexture = false;
 
+            // Keep the shader-variant space small: this foundation scene has a
+            // single directional light and no shadows/mixed lighting, but the
+            // default URP asset enables features (additional lights, shadows,
+            // reflection probes) that multiply compiled shader variants into
+            // the tens of thousands and make CI builds take hours.
+            pipelineAsset.shadowCascadeCount = 1;
+            pipelineAsset.supportsMainLightShadows = false;
+            pipelineAsset.supportsAdditionalLightShadows = false;
+            pipelineAsset.additionalLightsRenderingMode = LightRenderingMode.Disabled;
+            pipelineAsset.supportsMixedLighting = false;
+            pipelineAsset.reflectionProbeBlending = false;
+            pipelineAsset.reflectionProbeBoxProjection = false;
+
             if (GraphicsSettings.defaultRenderPipeline != pipelineAsset)
             {
                 GraphicsSettings.defaultRenderPipeline = pipelineAsset;
