@@ -190,9 +190,15 @@ namespace Hidden.EditorTools
             "_SCREEN_SPACE_OCCLUSION",
             "_LIGHT_LAYERS",
             "_LIGHT_COOKIES",
-            "_FORWARD_PLUS",
-            "_CLUSTER_LIGHT_LOOP",
-            "_CLUSTERED_RENDERING",
+            // _FORWARD_PLUS / _CLUSTER_LIGHT_LOOP / _CLUSTERED_RENDERING are
+            // deliberately NOT here: a freshly created UniversalRendererData
+            // defaults to the Forward+ rendering path in this URP version,
+            // so those keywords describe the mode actually in use, not an
+            // optional feature to strip. Blacklisting them made scoring
+            // prefer leftover classic-Forward variants that the renderer
+            // never actually requests at runtime - shaders compiled fine
+            // with no errors, but nothing on screen matched, which is what
+            // produced a solid black screen with a perfectly clean build log.
         };
 
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
