@@ -197,26 +197,42 @@ namespace Hidden.EditorTools
 
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
         {
-            // Only remove variants that enable a keyword this scene doesn't
-            // need. The blind numeric cap this used to fall back to (keep
-            // only the first N variants regardless of which) turned the
-            // screen solid black on device: for some URP-internal shader,
-            // the specific variant Unity actually needed at runtime landed
-            // past that cutoff and got discarded along with the truly
-            // unused ones. Keyword-based removal only ever drops variants
-            // this project provably cannot reach, so it can't remove the
-            // one actually in use.
+            // Score every variant by how many keywords this project doesn't
+            // need are enabled in it (0 = exactly what's actually used).
+            // Keep only the variants tied for the lowest score. For almost
+            // every shader/pass that's the fully-clean (score 0) variant,
+            // collapsing hundreds or thousands of variants down to a
+            // handful - same effect as unconditionally dropping any variant
+            // with an unneeded keyword. The difference matters for a pass
+            // that turns out to have NO fully-clean variant at all (this is
+            // what caused a solid black screen: URP/Lit's ForwardLit and
+            // GBuffer passes have none in this URP version) - unconditional
+            // removal stripped those to zero compiled variants, so nothing
+            // rendered; scoring instead keeps whichever variants are
+            // closest, so the pass still has something to compile and draw.
+            var scores = new int[data.Count];
+            var minScore = int.MaxValue;
+            for (var i = 0; i < data.Count; i++)
+            {
+                scores[i] = CountUnneededKeywords(shader, data[i]);
+                if (scores[i] < minScore)
+                {
+                    minScore = scores[i];
+                }
+            }
+
             for (var i = data.Count - 1; i >= 0; i--)
             {
-                if (HasUnneededKeyword(shader, data[i]))
+                if (scores[i] > minScore)
                 {
                     data.RemoveAt(i);
                 }
             }
         }
 
-        private static bool HasUnneededKeyword(Shader shader, ShaderCompilerData variant)
+        private static int CountUnneededKeywords(Shader shader, ShaderCompilerData variant)
         {
+            var count = 0;
             foreach (var keywordName in UnneededKeywords)
             {
                 ShaderKeyword keyword;
@@ -231,11 +247,11 @@ namespace Hidden.EditorTools
 
                 if (variant.shaderKeywordSet.IsEnabled(keyword))
                 {
-                    return true;
+                    count++;
                 }
             }
 
-            return false;
+            return count;
         }
     }
 }
