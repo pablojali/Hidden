@@ -6,9 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_Project/Scenes/Bootstrap.unity
-    guid: 072ce61f249e4c9b8ab36f6bbfd5b118
-  - enabled: 1
     path: Assets/_Project/Scenes/Worlds/M02_DioramaPrototype.unity
     guid: 9ff2340ba11849cc9b2e92813a01841f
+  - enabled: 1
+    path: Assets/_Project/Scenes/Bootstrap.unity
+    guid: 072ce61f249e4c9b8ab36f6bbfd5b118
   m_configObjects: {}
