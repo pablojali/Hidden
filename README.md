@@ -10,8 +10,11 @@ The game draws inspiration from the hidden-object exploration genre but is being
 built with its own original visual identity, characters, and gameplay. English,
 Spanish, and French localization are planned.
 
-This repository currently contains **M0.1 — Unity Project Foundation** only. No
-gameplay, art, or content systems have been implemented yet.
+This repository currently contains **M0.1 — Unity Project Foundation** and
+**M0.2 — 3D Diorama Prototype**. No gameplay, art, or content systems have
+been implemented yet — see `Docs/ROADMAP.md` for what's done and what's
+next, `Docs/GAME_DESIGN.md` for the design vision, and `Docs/ARCHITECTURE.md`
+for technical detail.
 
 ## Technology
 
@@ -36,30 +39,33 @@ Assets/
   _Project/
     Art/            Future 3D art, models, textures
     Audio/          Future audio assets
-    Materials/      Shared materials (e.g. M_Ground)
+    Materials/      Shared materials (ground, foliage, rock, path, etc.)
     Prefabs/        Future prefabs
-    Scenes/         Bootstrap.unity
+    Scenes/
+      Bootstrap.unity           M0.1 entry-point scene
+      Worlds/
+        M02_DioramaPrototype.unity   M0.2 diorama prototype scene
     Scripts/
       Core/         GameBootstrap and other engine-agnostic core code
+      Camera/       CameraInput, DioramaCameraController (M0.2)
       World/        (empty placeholder — future world/diorama systems)
       Characters/   (empty placeholder — future character systems)
       Interaction/  (empty placeholder — future interaction systems)
-      Camera/       (empty placeholder — future camera systems)
       Learning/     (empty placeholder — future learning-challenge systems)
       Localization/ (empty placeholder — future localization systems)
       UI/           (empty placeholder — future UI systems)
       Editor/       Editor-only tooling (URP/material bootstrap)
-    Settings/       URP pipeline/renderer assets (auto-created on first open)
+    Settings/       URP pipeline/renderer assets
     Resources/      Runtime-loaded resources (currently empty)
   ThirdParty/       Reserved for third-party assets (currently empty)
+Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
 Tests/
-  EditMode/         Minimal EditMode smoke test for GameBootstrap
+  EditMode/         EditMode smoke tests (GameBootstrap, M0.2 scene/camera)
 ```
 
-The empty folders exist so future systems (World, Characters, Interaction,
-Camera, Learning, Localization, UI) can be added without restructuring the
-project, per the project's modular architecture principle. They intentionally
-contain no code yet.
+The still-empty folders (World, Characters, Interaction, Learning,
+Localization, UI) exist so those future systems can be added without
+restructuring the project. They intentionally contain no code yet.
 
 ## Development
 
@@ -91,6 +97,20 @@ contain no code yet.
 2. Press Play. You should see a ground plane lit by a directional light, viewed
    from an elevated, angled-down perspective camera. The console should log
    `GameBootstrap: initialized.`.
+
+### Running the M0.2 diorama prototype
+
+1. Open `Assets/_Project/Scenes/Worlds/M02_DioramaPrototype.unity`.
+2. Press Play. You should see a small primitives-only forest diorama (base
+   terrain, hills, a house, trees, bushes, rocks, a path) from a fixed
+   elevated perspective camera — no black screen, no missing pipeline.
+3. In the Game view: **left-click and drag** to pan, **scroll wheel** to
+   zoom. Both are clamped (`panBounds`, `minZoomDistance`/
+   `maxZoomDistance` on the `CameraRig`'s `Diorama Camera Controller`
+   component) so you can't pan off the world or zoom through the terrain.
+
+This is a blockout for testing composition, depth, and camera feel — not
+final art. See `Docs/ARCHITECTURE.md` for how the camera is structured.
 
 ### Building for Android
 
@@ -191,22 +211,24 @@ The workflow builds an unsigned debug-style APK suitable for testing on your
 own device. Play Store distribution would additionally require a signing
 keystore, which is out of scope for this foundation milestone.
 
-## Current milestone — M0.1
+## Current milestone — M0.2
 
-M0.1 establishes the technical foundation only: project structure, a minimal
-Bootstrap scene (camera, light, ground, bootstrap entry point), URP rendering,
-Android/iOS platform configuration, and a clean Git setup. No forest, no
+M0.1 established the technical foundation: project structure, a minimal
+Bootstrap scene, URP rendering, Android/iOS platform configuration, and a
+clean Git setup. M0.2 adds the first playable 3D diorama prototype: a
+primitives-only forest environment and an elevated, mouse-pannable/zoomable
+exploration camera built on an input architecture ready for touch. No
 characters, no hidden-object mechanics, no learning mechanics, no camera
-transitions, no menus, no localization UI, and no monetization/backend have
-been implemented. Those belong to future milestones.
+rotation, no menus, no localization UI, and no monetization/backend have
+been implemented. See `Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 
-This foundation was authored in a headless environment without a Unity Editor
-or Unity command-line tooling installed, so the project files could not be
-opened, compiled, or run by Unity itself before committing. All project,
-scene, and settings files were hand-authored to Unity's standard YAML/asset
-formats. **Before relying on this project, open it once in Unity 6000.3.0f1
-(or the closest 6000.3.x LTS patch) to let Unity import assets, resolve
-packages, and run the one-time editor setup script**, then verify Play Mode
-and the build platforms as described above.
+This foundation (and the M0.2 scene/scripts) were authored in a headless
+environment without a Unity Editor or Unity command-line tooling installed,
+so the project files could not be opened, compiled, or run by Unity itself
+before committing. All project, scene, and settings files were hand-authored
+to Unity's standard YAML/asset formats. **Before relying on this project,
+open it once in Unity 6000.3.0f1 (or the closest 6000.3.x LTS patch) to let
+Unity import assets and resolve packages**, then verify Play Mode and the
+build platforms as described above.
