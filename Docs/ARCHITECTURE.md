@@ -14,7 +14,8 @@ Assets/_Project/
     Characters/   CharacterMover, CharacterPath, CharacterVisual (see below)
     Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
                   DiscoveryPulseFeedback, CompletionFeedback (see below)
-    World/, Interaction/, Learning/, Localization/, UI/
+    UI/           DiscoveryUI (see below)
+    World/, Interaction/, Learning/, Localization/
                   empty placeholders for future milestones
     Editor/       Editor-only tooling (URP asset bootstrap, shader stripping)
   Materials/      Simple URP/Lit materials, flat colors only
@@ -196,9 +197,63 @@ DiscoveryManager (GameObject)
   directional light intensity, then restores it. No UI, no audio, no
   particles, nothing on a per-frame budget beyond a single `Light` field
   write while the pulse is active.
-- **No UI anywhere.** `DiscoveryManager`'s public progress API
-  (`TotalTargets`/`DiscoveredCount`/`IsComplete`/events) exists so a future
-  UI milestone can read/subscribe to it without any change to this layer.
+- `DiscoveryManager`'s public progress API
+  (`TotalTargets`/`DiscoveredCount`/`IsComplete`/events) exists specifically
+  so a UI milestone could read/subscribe to it without any change to this
+  layer — M0.6 (below) is that milestone.
+
+## Discovery UI architecture (M0.6)
+
+```
+DiscoveryCanvas (Screen Space - Overlay, CanvasScaler 1080x1920)
+  - DiscoveryUI       subscribes to DiscoveryManager.OnDiscovery/OnCompleted
+  ProgressText        top-right corner, "{DiscoveredCount} / {TotalTargets}"
+  ConfirmationText     lower-center, CanvasGroup-faded, pop+fade animation
+```
+
+- **`DiscoveryUI`** depends on `DiscoveryManager` in one direction only:
+  it holds a reference to read `TotalTargets`/`DiscoveredCount` and
+  subscribes to `OnDiscovery`/`OnCompleted`. `DiscoveryManager` has no
+  field, event, or method that knows `DiscoveryUI` (or any UI) exists —
+  same shape as `CharacterVisual` → `Discoverable` and
+  `DiscoveryPulseFeedback` → `Discoverable`. `DiscoveryUI` never calls a
+  mutating method on `DiscoveryManager`, only reads it, so gameplay state
+  can't be affected by whether a UI is even present. No UI singleton: one
+  `DiscoveryUI` on one `Canvas`, wired via a normal Inspector reference,
+  is all this milestone needs.
+- **Progress** (`ProgressText`) updates the moment `OnDiscovery` fires —
+  no animation, no delay, always current. It's deliberately small
+  (46pt), semi-transparent (alpha 0.85), tucked in the top-right corner
+  with a soft drop shadow for legibility against the diorama rather than
+  a background panel, so it reads as *discreet* rather than a HUD.
+- **Confirmation/completion** (`ConfirmationText`) is empty and invisible
+  (`CanvasGroup.alpha = 0`) until the first discovery. Each
+  `OnDiscovery`/`OnCompleted` call sets its text and starts a timer;
+  `Update()` drives a single sine-curve pop-and-fade over that timer
+  (`messageDuration` ≈1.3s per discovery, `completionMessageDuration`
+  ≈1.8s with a larger `completionPopScale` for a "slightly stronger" but
+  still minimal completion beat) — one curve, no per-frame allocation, no
+  coroutines.
+- **Microcopy is data, not code**: `discoveryMessages` (a list, so
+  variants can rotate later) and `completionMessage` are `DiscoveryUI`
+  Inspector fields, also settable via `Configure(...)`. Neither
+  `DiscoveryManager` nor `DiscoverySystem` contain a single user-facing
+  string. A future localization system replaces `Configure(...)`'s source
+  (e.g. a language table) without touching either of those files.
+  - Chosen: **"There you are!"** per discovery, **"All found!"** on
+    completion. Alternatives considered: "Found!" (safe but flat, no
+    warmth); "You found someone!" / "You found them all!" (personifies
+    the target, which breaks for `HiddenGem` — it isn't "someone");
+    "Found one!" (fine but generic); "Nothing left to find!" (accurate
+    but reads slightly deflating for a positive moment). "There you are!"
+    reads instantly, is warm without being childish, works identically
+    whether the target is a person-like character or an object (a
+    universal thing to say on finding something hidden), and translates
+    naturally ("¡Ahí estás!", "Te voilà !"). "All found!" mirrors that
+    same target-agnostic quality for completion.
+- **No victory screen, counter beyond the corner readout, stars, score,
+  timer, hints, sound, particles, or localization system** — explicitly
+  out of scope for this milestone.
 
 ## Input System
 

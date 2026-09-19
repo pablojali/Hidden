@@ -82,8 +82,29 @@ Implemented ≠ validated: this milestone is done once the Product Owner has
 confirmed on device that all 3 targets are individually discoverable and
 that finding the last one triggers the completion light pulse.
 
-## M0.6+ — not started
+## M0.6 — Discovery UI & Confirmation Feedback — implemented, pending Product Owner validation
 
-The dive-in interaction, the learning-challenge system, UI, localization,
+Adds the first UI layer: a `DiscoveryCanvas` with a small discreet
+top-right progress readout ("0 / 3" → "3 / 3") and a lower-center
+confirmation message that pops in/fades out (~1.3s) each time a target is
+found, plus a slightly stronger completion message when all 3 are found.
+`DiscoveryUI` (`Scripts/UI/DiscoveryUI.cs`) only subscribes to
+`DiscoveryManager`'s existing `OnDiscovery`/`OnCompleted` events and reads
+its `TotalTargets`/`DiscoveredCount` — `DiscoveryManager` has no reference
+to it or any other UI object, and nothing about `CharacterMover` or
+`DiscoverySystem` changed. Confirmation/completion copy is Inspector-
+configurable on `DiscoveryUI` (`discoveryMessages`/`completionMessage`),
+never hardcoded in gameplay code, so a future localization system can
+replace it without touching `DiscoveryManager`/`DiscoverySystem`. See
+`ARCHITECTURE.md` for the chosen microcopy and reasoning.
+
+Implemented ≠ validated: this milestone is done once the Product Owner has
+confirmed on device that the progress counter updates immediately, the
+confirmation pop-in reads clearly without covering the diorama, and the
+completion message is visibly distinct from a normal discovery.
+
+## M0.7+ — not started
+
+The dive-in interaction, the learning-challenge system, localization,
 progression, and save data are future work and intentionally out of scope
 until explicitly requested.

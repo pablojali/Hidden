@@ -2,7 +2,8 @@
     "name": "Hidden.Runtime",
     "rootNamespace": "Hidden",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

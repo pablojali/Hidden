@@ -12,9 +12,10 @@ Spanish, and French localization are planned.
 
 This repository currently contains **M0.1 — Unity Project Foundation**,
 **M0.2 — 3D Diorama Prototype**, **M0.3 — Living Character Prototype**,
-**M0.4 — Discovery Prototype**, and **M0.5 — Hidden World Core Loop**. No
-learning, UI, or content systems have been implemented yet — see
-`Docs/ROADMAP.md` for what's done and what's next, `Docs/GAME_DESIGN.md`
+**M0.4 — Discovery Prototype**, **M0.5 — Hidden World Core Loop**, and
+**M0.6 — Discovery UI & Confirmation Feedback**. No learning or content
+systems have been implemented yet — see `Docs/ROADMAP.md` for what's done
+and what's next, `Docs/GAME_DESIGN.md`
 for the design vision, and `Docs/ARCHITECTURE.md`
 for technical detail.
 
@@ -53,18 +54,18 @@ Assets/
       Characters/   CharacterMover, CharacterPath, CharacterVisual (M0.3)
       Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
                     DiscoveryPulseFeedback, CompletionFeedback (M0.4/M0.5)
+      UI/           DiscoveryUI (M0.6)
       World/        (empty placeholder — future world/diorama systems)
       Interaction/  (empty placeholder — future interaction systems)
       Learning/     (empty placeholder — future learning-challenge systems)
       Localization/ (empty placeholder — future localization systems)
-      UI/           (empty placeholder — future UI systems)
       Editor/       Editor-only tooling (URP/material bootstrap)
     Settings/       URP pipeline/renderer assets
     Resources/      Runtime-loaded resources (currently empty)
   ThirdParty/       Reserved for third-party assets (currently empty)
 Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
 Tests/
-  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.5)
+  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.6)
 ```
 
 The still-empty folders (World, Interaction, Learning, Localization, UI)
@@ -124,10 +125,13 @@ project. They intentionally contain no code yet.
    things to find, spread across the map so you have to actually explore:
    `Character` (the M0.3 walker), a second walker `Character2` on the
    opposite side of the diorama, and a static `HiddenGem` tucked next to a
-   bush. Zoom in on each and it should pulse briefly (scale up and back)
-   the first time it's spotted, then never again. Find all 3 and the
-   scene's light briefly brightens once — that's `DiscoveryManager`
-   completing the loop. Still no UI, counter, or score.
+   bush. A small "0 / 3" readout in the top-right corner tracks progress.
+   Zoom in on each target and it should pulse briefly (scale up and back)
+   *and* pop up a short message ("There you are!") near the bottom of the
+   screen, then never again for that target. Find all 3 and you'll see
+   "All found!" instead, plus the scene's light briefly brightening once —
+   that's `DiscoveryManager` completing the loop. Still no menus, score,
+   or sound.
 
 This is a blockout for testing composition, depth, and camera feel — not
 final art. See `Docs/ARCHITECTURE.md` for how the camera is structured.
@@ -231,7 +235,7 @@ The workflow builds an unsigned debug-style APK suitable for testing on your
 own device. Play Store distribution would additionally require a signing
 keystore, which is out of scope for this foundation milestone.
 
-## Current milestone — M0.5
+## Current milestone — M0.6
 
 M0.1 established the technical foundation: project structure, a minimal
 Bootstrap scene, URP rendering, Android/iOS platform configuration, and a
@@ -241,16 +245,18 @@ exploration camera. M0.3 added a single autonomous placeholder character
 that walks a waypoint loop through that world, pausing and turning on its
 own — not player-controlled. M0.4 added the first discovery mechanic: the
 camera's `DiscoverySystem` marks a `Discoverable` once it's panned/zoomed
-into range and view, triggering a one-shot visual pulse. M0.5 turns that
+into range and view, triggering a one-shot visual pulse. M0.5 turned that
 into the first minimal core loop — 3 `Discoverable` targets (two moving,
-one static) tracked by a new `DiscoveryManager`, which fires a single
-completion cue once all 3 are found. No learning mechanics, no menus, no
-localization UI, and no monetization/backend have been implemented. See
-`Docs/ROADMAP.md` for what's next.
+one static) tracked by a `DiscoveryManager`, which fires a single
+completion cue once all 3 are found. M0.6 adds the first UI: a discreet
+progress readout and a short pop-in confirmation/completion message,
+driven entirely by subscribing to `DiscoveryManager`'s events. No learning
+mechanics, no menus, no localization system, and no monetization/backend
+have been implemented. See `Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 
-This foundation (and the M0.2-M0.5 scenes/scripts) were authored in a headless
+This foundation (and the M0.2-M0.6 scenes/scripts) were authored in a headless
 environment without a Unity Editor or Unity command-line tooling installed,
 so the project files could not be opened, compiled, or run by Unity itself
 before committing. All project, scene, and settings files were hand-authored

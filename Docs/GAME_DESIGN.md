@@ -37,9 +37,7 @@ dialogue, no identity yet.
 
 Exploring the world can now genuinely find something: panning/zooming a
 target into camera view marks it discovered and it reacts once. This is
-the first minimal proof of the "discover hidden details" pillar — just the
-detection and a small confirmation, not a system yet (no counter, no
-rewards, no UI acknowledging it happened).
+the first minimal proof of the "discover hidden details" pillar.
 
 The world now holds 3 things to find, spread across it on purpose so
 finding all of them means actually scanning the diorama rather than
@@ -47,7 +45,16 @@ staring at one spot: two living figures walking their own separate routes,
 and one still, quieter thing tucked into the scenery. Finding the last one
 gives a small shared moment (the world's own light responding) rather than
 a score screen — the loop is "explore → discover → discover → discover →
-done," nothing more yet.
+done."
+
+The player now gets a small, quiet acknowledgment for each find — a short
+line of text that appears and fades near where they're looking, plus a
+discreet running count tucked in a corner — instead of wondering silently
+whether something registered. It stays out of the way on purpose: no
+score, no menu, nothing that turns the diorama into a dashboard. The tone
+of that acknowledgment ("There you are!") is meant to feel like greeting
+something you were looking for, not like a game telling you "+1" — warm
+and a little wondrous, not mechanical.
 
 ## Out of scope for now
 
