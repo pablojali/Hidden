@@ -166,12 +166,12 @@ namespace Hidden.Tests
                 // not exact counts, so these don't need updating every
                 // time prop density changes.
                 var blobs = world.GetComponentsInChildren<ProceduralBlobMesh>(true);
-                Assert.GreaterOrEqual(blobs.Length, 20,
-                    "Expected rocks/bushes/grass tufts to all use ProceduralBlobMesh.");
+                Assert.GreaterOrEqual(blobs.Length, 40,
+                    "Expected rocks/bushes/grass tufts/deciduous canopies/character heads to use ProceduralBlobMesh.");
 
                 var cones = world.GetComponentsInChildren<ProceduralConeMesh>(true);
-                Assert.GreaterOrEqual(cones.Length, 15,
-                    "Expected tree canopies to all use ProceduralConeMesh.");
+                Assert.GreaterOrEqual(cones.Length, 10,
+                    "Expected most tree canopies to still use ProceduralConeMesh (pine species).");
 
                 // The discovery chain itself must be completely untouched
                 // by the visual pass.
@@ -192,6 +192,18 @@ namespace Hidden.Tests
                 {
                     Assert.IsNull(filter.GetComponent<ProceduralBlobMesh>());
                 }
+
+                // Reference-image visual pass: at least one tree canopy uses
+                // the rounder blob shape (the "deciduous" species mixed in
+                // among the pines), not just cones.
+                var treeCanopies = world.GetComponentsInChildren<Transform>(true)
+                    .Where(t => t.name == "Canopy" && t.parent != null && t.parent.parent != null
+                                && t.parent.parent.name == "Props")
+                    .ToList();
+                Assert.IsTrue(treeCanopies.Any(t => t.GetComponent<ProceduralBlobMesh>() != null),
+                    "Expected at least one tree canopy to use the deciduous (blob) species.");
+                Assert.IsTrue(treeCanopies.Any(t => t.GetComponent<ProceduralConeMesh>() != null),
+                    "Expected at least one tree canopy to still use the pine (cone) species.");
             }
             finally
             {
@@ -218,7 +230,13 @@ namespace Hidden.Tests
                     Assert.IsNotNull(model.Find("ArmRight"));
                     Assert.IsNotNull(model.Find("Backpack"));
                     Assert.IsNotNull(model.Find("Body"));
-                    Assert.IsNotNull(model.Find("Head"));
+                    var head = model.Find("Head");
+                    Assert.IsNotNull(head);
+
+                    // Reference-image visual pass: heads are now a
+                    // low-jitter faceted blob instead of a smooth sphere.
+                    Assert.IsNotNull(head.GetComponent<ProceduralBlobMesh>(),
+                        $"{mover.name}'s Head should use ProceduralBlobMesh for a faceted look.");
                 }
             }
             finally
@@ -238,8 +256,20 @@ namespace Hidden.Tests
 
                 Assert.IsNotNull(world.transform.Find("Environment/Mountain"));
                 Assert.IsNotNull(world.transform.Find("Environment/Waterfall"));
+                Assert.IsNotNull(world.transform.Find("Environment/MountainTerrace"));
                 Assert.IsNotNull(world.transform.Find("Structures/Dock"));
                 Assert.IsNotNull(world.transform.Find("Props/Boat"));
+
+                // Thick two-tone terrain block (reference-image "visible
+                // sides" requirement): a tall TerrainBase under the thin
+                // green DioramaBase slab, whose top surface must stay at
+                // exactly y=0 since every prop assumes that ground level.
+                var terrainBase = world.transform.Find("Environment/TerrainBase");
+                var dioramaBase = world.transform.Find("Environment/DioramaBase");
+                Assert.IsNotNull(terrainBase, "Expected a TerrainBase block for the visible terrain sides.");
+                Assert.IsNotNull(dioramaBase);
+                Assert.AreEqual(0f, dioramaBase.position.y + dioramaBase.localScale.y / 2f, 0.0001f,
+                    "DioramaBase's top surface must stay at world y=0.");
 
                 var riverSegments = world.GetComponentsInChildren<Transform>(true)
                     .Count(t => t.name.StartsWith("River_"));

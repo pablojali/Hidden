@@ -25,7 +25,7 @@ Assets/_Project/
   Data/
     Levels/       LevelDefinition ScriptableObject assets, one per level
   Materials/      Simple URP/Lit materials, flat colors only (M_Moss,
-                  M_Water, M_Dirt added in M0.10)
+                  M_Water, M_Dirt, M_TerrainSide added in M0.10)
   Settings/       URP pipeline/renderer assets
 Tests/EditMode/    Structural smoke tests (scene loads, components present)
 ```
@@ -479,11 +479,15 @@ Assets/_Project/Scripts/World/ProceduralConeMesh.cs
   flat-shaded triangle fan from a fixed apex down to a gently jittered
   base rim (one triangle per side, `sides` configurable, no base cap since
   a trunk always sits under it), same "build once in `Awake()`, self-
-  correct winding from geometry" approach as the blob generator. All 23
-  tree canopies in the scene use it now (two loose "species" — taller/
-  narrower vs. shorter/fuller — alternating by material, same as before);
-  rocks/bushes/grass/mountain/boat stay on the rounder blob shape, which
-  reads better for those. `Discoverable` targets deliberately keep their
+  correct winding from geometry" approach as the blob generator. Most tree
+  canopies use it (two pine "species" — taller/narrower vs. shorter/
+  fuller); roughly a third of trees now cycle to a third species that
+  reuses `ProceduralBlobMesh` instead for a rounder "deciduous" canopy
+  (`emit_tree`'s `species` parameter, `species % 3` at each call site), so
+  a cluster reads as mixed forest rather than one repeated silhouette.
+  Rocks/bushes/grass/mountain/boat/character-heads (see below) stay on the
+  rounder blob shape, which reads better for those. `Discoverable` targets
+  deliberately keep their
   plain, unjittered sphere mesh (`M_Hidden`, gold), used nowhere else —
   the contrast between "perfect geometric shape" (something to find) and
   "organic faceted prop" (environment) is a readability choice, not an
@@ -500,7 +504,13 @@ Assets/_Project/Scripts/World/ProceduralConeMesh.cs
   children of `Model`, the same transform `CharacterVisual` already
   bobs/sways as one piece — `CharacterMover`, `CharacterPath`, and
   `CharacterVisual` were not touched, so the existing procedural
-  walk/idle animation now moves a richer silhouette for free.
+  walk/idle animation now moves a richer silhouette for free. `Head` later
+  switched from a plain `MESH_SPHERE` to a low-jitter (0.12)
+  `ProceduralBlobMesh` — `verticalSquash` kept near 1 (0.9) so it still
+  clearly reads as a head, with only subtle facets — matching the
+  reference image's "faceted geometry" language for characters.
+  `Body`/`ArmLeft`/`ArmRight` stay on plain capsules; only the head
+  changed.
 - **Ground variation**: `DioramaBase` switched from `M_Terrain` to the
   previously-unused `M_Ground` (a richer grass green), while `Hill_01`
   keeps `M_Terrain`, giving the flat ground and the hill distinct tones. A
@@ -510,6 +520,18 @@ Assets/_Project/Scripts/World/ProceduralConeMesh.cs
   read as a recessed pocket without any terrain deformation. A `FallenLog`
   (rotated cylinder) and a `Crate` (small cube) add minor prop variety
   near the clearing.
+- **Thick terrain block**: to match the reference image's visible-sides
+  diorama block, the ground is now two stacked `MESH_CUBE`s instead of one
+  flat slab — a new, tall `TerrainBase` (new `M_TerrainSide` material, warm
+  tan/gold) at `(0, -2.75, 0)` scale `(106, 3.5, 106)`, with the original
+  `DioramaBase` green slab sitting directly on top at its exact original
+  position/scale. `DioramaBase`'s top surface is unchanged at world y=0 —
+  the invariant every prop in the scene assumes — so this is purely
+  additive underneath it. A `MountainTerrace` (`MESH_CUBE`, `M_Dirt`, a
+  flat dirt-toned step near the mountain's base) gives a second, layered
+  elevation change, entirely in the target-free margin. `M_Rock` and
+  `M_Ground` were also both warmed/saturated slightly to match the
+  reference's palette (mauve-brown rock, more vivid green ground).
 - **Map enlarged ~50%**, again directly against the reference image:
   `PAN_HALF` 13→20 (`panBounds` now 40×40), `DioramaBase` scale 68→106,
   `maxZoomDistance` 65→98, starting zoom distance 52→78 — the same ratios
@@ -539,8 +561,10 @@ Assets/_Project/Scripts/World/ProceduralConeMesh.cs
   **`Boat`** (a `ProceduralBlobMesh` hull with strong non-uniform
   transform scale for a simple elongated hull shape, plus a small mast)
   sit together in the front-left corner where the river ends.
-- **Density**: 23 trees total (13 original + 10 added, all
-  `ProceduralConeMesh` canopies), 6 bare/leafless trees for variety
+- **Density**: 23 trees total (13 original + 10 added; 15
+  `ProceduralConeMesh` pine canopies, 8 `ProceduralBlobMesh` deciduous
+  canopies, cycling `species % 3` per tree), 6 bare/leafless trees for
+  variety
   (`emit_bare_tree` — a trunk plus two thin angled branch capsules, no
   canopy), 14 rocks, 9 bushes, 20 grass tufts, all placed in the expanded
   margin rather than packed into the existing core.
@@ -553,8 +577,10 @@ Assets/_Project/Scripts/World/ProceduralConeMesh.cs
   triangles built once at startup, never rebuilt. No textures, no custom
   shaders, no new physics/colliders, no `Update()`-driven work, no
   `Instantiate`/`Destroy` calls anywhere in the new code. Scene
-  `GameObject` count grew from 126 to 254 across all rounds — still well
-  below M02's original prototype footprint.
+  `GameObject` count grew from 126 to 256 across all rounds (`TerrainBase`
+  and `MountainTerrace` added two; the tree-species mix and faceted heads
+  changed component wiring, not object count) — still well below M02's
+  original prototype footprint.
 
 ## Input System
 

@@ -111,6 +111,18 @@ somewhere beyond the part the player already knows, with noticeably more
 going on throughout (more trees, rocks, and undergrowth) without it
 turning into clutter.
 
+A closer pass against the same reference image pushed the "physical
+miniature" feeling further: the ground itself now reads as a thick block
+with visible sides, not a flat sheet floating in space, and the mountain
+steps up from a lower dirt terrace instead of rising straight out of flat
+ground. Not every tree is the same silhouette anymore — a rounder,
+fuller-canopy tree is now mixed in among the tall pines, the way a real
+patch of forest is never one species. The two wandering figures' heads
+picked up the same gentle faceting as the rocks and bushes around them,
+so the whole cast of shapes — terrain, plants, and characters alike —
+shares one consistent "cut from simple polygons by hand" language rather
+than characters being the one perfectly smooth thing in a faceted world.
+
 ## Out of scope for now
 
 Character interaction, learning challenges, puzzles, rewards, progression,

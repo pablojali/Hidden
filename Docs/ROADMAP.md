@@ -268,6 +268,26 @@ clearing toward the mountain and the dock. Prop density roughly doubled:
 bushes, 10 more grass tufts, all in the expanded margin. Scene
 `GameObject` count grew from 126 to 254 across these rounds.
 
+**A further pass matched the reference image more closely still.** The
+ground is now a thick two-tone block instead of a flat slab: a tall
+`TerrainBase` (new `M_TerrainSide` material, warm tan/gold) sits under the
+thin green `DioramaBase` slab, whose top surface stays at exactly world
+y=0 — the invariant every prop in the scene assumes — so nothing else
+moved. A `MountainTerrace` (a flat dirt-toned step) gives the mountain a
+layered, stepped base instead of rising straight from flat ground.
+Roughly a third of all trees now use a third "species": a rounder,
+blob-shaped deciduous canopy mixed in among the pine cones, so a cluster
+reads as mixed forest rather than one repeated silhouette. `Target_04`'s
+and `Target_06`'s heads switched from a perfectly smooth sphere to a
+low-jitter `ProceduralBlobMesh` (subtle facets, still clearly head-shaped)
+to match the reference's "faceted geometry" language. `M_Rock` and
+`M_Ground` were also warmed/saturated slightly to match the reference's
+palette. Directional Light color and any AO/shadow rendering changes were
+deliberately **not** touched this round: the light was already
+reasonably warm from earlier milestones, and adding an AO Renderer
+Feature by hand, with no Editor to verify it against, was judged too
+risky relative to its payoff here.
+
 Discoverable target positions (re-verified byte-identical to M0.8 after
 every regeneration), the camera's own controls, and the minimal UI/
 discovery/completion-celebration systems are all untouched throughout —

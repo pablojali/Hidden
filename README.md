@@ -161,10 +161,13 @@ camera is structured.
    of it, while the 6 hidden things still aren't obviously visible from
    there. The geometry itself is no longer bare primitives: rocks,
    bushes, and grass tufts are gently irregular faceted shapes, tree
-   canopies are proper low-poly pine cones, the house has a
-   chimney/door/window, the two moving figures have arms and a backpack,
-   and the ground has a bit more color variation (including a small mossy
-   hollow near the hill). The map is also about 50% bigger and noticeably
+   canopies are mostly low-poly pine cones with a rounder deciduous shape
+   mixed in among them, the house has a chimney/door/window, the two
+   moving figures have arms, a backpack, and a subtly faceted head, and
+   the ground is a thick two-tone block (a warm tan/gold side beneath the
+   green top) rather than a flat sheet, with a bit more color variation
+   (including a small mossy hollow near the hill). The map is also about
+   50% bigger and noticeably
    busier: a mountain on the right side has a waterfall feeding a river
    that winds across the newly opened ground to a small dock and boat,
    two dirt roads connect the original clearing out toward both, and
@@ -341,10 +344,17 @@ also enlarged about 50% with a mountain/waterfall/river, a dock and boat,
 dirt roads, and roughly double the background prop density — all in the
 newly expanded margin around the original clearing/house/targets, which
 are untouched throughout; `panBounds` and both zoom distances grew to
-match the bigger map. Discovery, camera controls, and UI behavior are all
-unchanged — only what the level looks like standing still. No learning
-mechanics, no menus, no localization system, and no monetization/backend
-have been implemented. See `Docs/ROADMAP.md` for what's next.
+match the bigger map. A later round matched the reference image further
+still: the ground is now a thick two-tone block with visible sides
+(`TerrainBase` under the original `DioramaBase` slab, whose top surface
+stays at world y=0), the mountain steps up from a `MountainTerrace`, about
+a third of the trees now use a rounder deciduous canopy mixed in among
+the pines, and the two moving characters' heads switched from a smooth
+sphere to a subtly faceted `ProceduralBlobMesh` to match. Discovery,
+camera controls, and UI behavior are all unchanged — only what the level
+looks like standing still. No learning mechanics, no menus, no
+localization system, and no monetization/backend have been implemented.
+See `Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 
