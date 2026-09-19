@@ -17,7 +17,7 @@ namespace Hidden.Camera
     // drag, pinch mirrors scroll.
     public class CameraInput : MonoBehaviour, ICameraInputSource
     {
-        [SerializeField] private float pinchZoomScale = 0.01f;
+        [SerializeField] private float pinchZoomScale = 0.025f;
 
         public Vector2 PanDelta { get; private set; }
         public float ZoomDelta { get; private set; }

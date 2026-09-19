@@ -116,10 +116,12 @@ project. They intentionally contain no code yet.
    5-waypoint loop (`CharacterPath`) — it pauses and turns smoothly at each
    stop, with a visible bob while walking vs. a slower sway while idle. It
    moves on its own; nothing in the scene lets you control it directly.
-5. Pan/zoom until the character is within about 15 units and inside view —
-   it should pulse briefly (scale up and back) the first time it's spotted,
-   then never again. That's the `DiscoverySystem`/`Discoverable` pair on
-   `Main Camera`/`Character` — no UI, counter, or score yet.
+5. Play Mode starts fully zoomed out — the whole diorama is visible but
+   nothing is in discovery range yet. Zoom in on the character (within
+   about 15 units) and it should pulse briefly (scale up and back) the
+   first time it's spotted, then never again. That's the
+   `DiscoverySystem`/`Discoverable` pair on `Main Camera`/`Character` — no
+   UI, counter, or score yet.
 
 This is a blockout for testing composition, depth, and camera feel — not
 final art. See `Docs/ARCHITECTURE.md` for how the camera is structured.

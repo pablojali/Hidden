@@ -22,10 +22,10 @@ namespace Hidden.Camera
         [SerializeField] private Rect panBounds = new Rect(-7f, -7f, 14f, 14f);
 
         [Header("Zoom")]
-        [SerializeField] private float zoomSpeed = 0.4f;
-        [SerializeField] private float zoomSmoothing = 7f;
+        [SerializeField] private float zoomSpeed = 1f;
+        [SerializeField] private float zoomSmoothing = 10f;
         [SerializeField] private float minZoomDistance = 8f;
-        [SerializeField] private float maxZoomDistance = 24f;
+        [SerializeField] private float maxZoomDistance = 95f;
 
         private ICameraInputSource cameraInput;
         private Vector3 offsetDirection;

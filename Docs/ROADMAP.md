@@ -41,16 +41,21 @@ the M0.3 `Character`) discovered exactly once. `CharacterVisual` reacts
 with a one-shot scale pulse; `CharacterMover` was not touched and has no
 knowledge discovery exists. See `ARCHITECTURE.md`.
 
-The M0.2 diorama's footprint was also enlarged (~2.5×, positions only —
-prop sizes unchanged) and pan bounds/zoom range widened to match: at the
-original size the whole world fit on screen almost regardless of camera
-position, so "discovered" was meaningless (always true). Camera pan/zoom
-sensitivity was also softened for a gentler, kid-friendlier feel.
+The M0.2 diorama's footprint was enlarged twice during tuning (~2.5×, then
+another ~1.3×, positions only — prop sizes unchanged) with pan bounds/zoom
+range widened to match: at the original size the whole world fit on screen
+almost regardless of camera position, so "discovered" was meaningless
+(always true). More trees and rocks were scattered across the larger area
+so it doesn't read as empty. Camera pan sensitivity was softened for a
+gentler, kid-friendlier feel; zoom was tuned in the opposite direction
+(faster/more agile) since the zoom range is now much wider — Play Mode
+starts fully zoomed out (the whole diorama visible, nothing in discovery
+range) and zooming in on the character brings it into range.
 
 Implemented ≠ validated: this milestone is done once the Product Owner has
-confirmed on device that the character is genuinely out of view/range from
-parts of the world, and that panning/zooming it into view triggers the
-discovery pulse exactly once.
+confirmed on device that the character is genuinely out of range at the
+starting zoomed-out view, and that zooming in on it triggers the discovery
+pulse exactly once.
 
 ## M0.5+ — not started
 
