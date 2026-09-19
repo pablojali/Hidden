@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using Hidden.Characters;
 using Hidden.Discovery;
 using Hidden.World;
@@ -95,10 +96,11 @@ namespace Hidden.Tests
             {
                 var world = scene.GetRootGameObjects()[0];
 
-                // Trees, bushes, rocks, and grass tufts all use the
-                // procedural blob generator now -- rocks (0), tree
-                // canopies (13), bushes (4), grass tufts (10) = 27, at
-                // minimum.
+                // Trees, bushes, rocks, and grass tufts (original core
+                // area plus the expanded margin) all use the procedural
+                // blob generator now -- a conservative lower bound, not
+                // an exact count, so this doesn't need updating every
+                // time prop density changes.
                 var blobs = world.GetComponentsInChildren<ProceduralBlobMesh>(true);
                 Assert.GreaterOrEqual(blobs.Length, 27,
                     "Expected rocks/canopies/bushes/grass tufts to all use ProceduralBlobMesh.");
@@ -150,6 +152,41 @@ namespace Hidden.Tests
                     Assert.IsNotNull(model.Find("Body"));
                     Assert.IsNotNull(model.Find("Head"));
                 }
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void Scene_HasExpandedMapWithMountainRiverDockAndBoat()
+        {
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+
+            try
+            {
+                var world = scene.GetRootGameObjects()[0];
+
+                Assert.IsNotNull(world.transform.Find("Environment/Mountain"));
+                Assert.IsNotNull(world.transform.Find("Environment/Waterfall"));
+                Assert.IsNotNull(world.transform.Find("Structures/Dock"));
+                Assert.IsNotNull(world.transform.Find("Props/Boat"));
+
+                var riverSegments = world.GetComponentsInChildren<Transform>(true)
+                    .Count(t => t.name.StartsWith("River_"));
+                Assert.GreaterOrEqual(riverSegments, 5, "River should be built from several chained segments.");
+
+                var cameraRig = world.transform.Find("Camera");
+                var controller = cameraRig.GetComponent<Hidden.Camera.DioramaCameraController>();
+                var maxZoomField = typeof(Hidden.Camera.DioramaCameraController)
+                    .GetField("maxZoomDistance", BindingFlags.NonPublic | BindingFlags.Instance);
+                var maxZoom = (float)maxZoomField.GetValue(controller);
+                Assert.Greater(maxZoom, 65f, "maxZoomDistance should have grown along with the enlarged map.");
+
+                // The discovery chain must still be exactly as before: the
+                // map got bigger and busier, the loop did not change.
+                Assert.AreEqual(6, world.GetComponentsInChildren<Discoverable>(true).Length);
             }
             finally
             {

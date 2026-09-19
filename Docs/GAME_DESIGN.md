@@ -99,6 +99,17 @@ with a ball on top. Nothing about how the world plays changed — same loop,
 same 6 targets, same camera, same completion beat — only what it looks
 like standing still.
 
+The world grew outward around that same core: the diorama is about 50%
+larger, with a mountain and a waterfall feeding a river that winds across
+the newly opened ground to a small dock where a boat sits, and two dirt
+roads connecting the original clearing out toward both. None of it
+crowds the original space — the clearing, the house, the two tree
+stands, and all 6 hidden things are exactly where they were; the new
+mountain, river, and dock give the miniature world a sense of continuing
+somewhere beyond the part the player already knows, with noticeably more
+going on throughout (more trees, rocks, and undergrowth) without it
+turning into clutter.
+
 ## Out of scope for now
 
 Character interaction, learning challenges, puzzles, rewards, progression,

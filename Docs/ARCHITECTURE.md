@@ -23,8 +23,8 @@ Assets/_Project/
     Editor/       Editor-only tooling (URP asset bootstrap, shader stripping)
   Data/
     Levels/       LevelDefinition ScriptableObject assets, one per level
-  Materials/      Simple URP/Lit materials, flat colors only (M_Moss added,
-                  M_Ground put into use in M0.10)
+  Materials/      Simple URP/Lit materials, flat colors only (M_Moss
+                  added in M0.10, M_Water/M_Dirt added in M0.11)
   Settings/       URP pipeline/renderer assets
 Tests/EditMode/    Structural smoke tests (scene loads, components present)
 ```
@@ -510,6 +510,67 @@ Assets/_Project/Scripts/World/ProceduralBlobMesh.cs
   148 (new house/character/ground-variety parts), still far below M02's
   original prototype footprint. No `Instantiate`/`Destroy` calls anywhere
   in the new code.
+
+## World expansion: mountain, river & density (M0.11)
+
+Also scoped to `Level_01_ForestDiorama.unity` only. Everything below sits
+outside the original ~26×26 core area (clearing/path/house/tree clusters/
+all 6 `Discoverable` targets), which is byte-for-byte unchanged from
+M0.10 — confirmed by re-checking every target's `m_LocalPosition` after
+regenerating the scene.
+
+```
+World
+  Environment   ... + Mountain (Peak + 4 BaseRocks), Waterfall
+  Structures    ... + Dock (Planks + 2 Posts)
+  Props         ... + Boat (Hull + Mast), 2 dirt-road chains (River
+                      reuses the same chain builder, lives under
+                      Environment), +10 trees, +6 BareTrees, +8 rocks,
+                      +5 bushes, +10 grass tufts
+```
+
+- **Map enlarged ~50%**: `PAN_HALF` 13→20 (`panBounds` now 40×40),
+  `DioramaBase` scale 68→106, `maxZoomDistance` 65→98, starting zoom
+  distance 52→78 — the same ratios M0.9 established, scaled up together
+  rather than redesigned. `minZoomDistance` (6) untouched.
+- **`Mountain`** reuses `ProceduralBlobMesh` at larger parameters than
+  `Hill_01` (M0.8, untouched): one tall, low-jitter (0.22) "Peak" blob at
+  radius 6.5, plus four smaller, more angular (jitter 0.3) "BaseRock"
+  blobs clustered at its foot — the same technique as every other rock in
+  the scene, just bigger. Placed on the right side (`(17, 0, 6)`), beyond
+  the existing right tree cluster, so it reads as a landmark on one edge
+  of the diorama rather than crowding the core.
+- **`Waterfall`** is one tilted `MESH_CUBE` slab (`M_Water`) leaned
+  against the mountain's near face — no particle system, no shader
+  effect, just a static colored slab, consistent with the project's
+  "simple shaders" mobile constraint.
+- **The river** is built by a new small helper, `emit_ribbon_segment`
+  (plus `emit_water_path`/`emit_dirt_road` wrappers around it): given two
+  XZ points, it computes the straight-line distance and Y-axis rotation
+  between them and emits one flattened, rotated `MESH_CUBE` spanning that
+  distance — a simple chained polyline, not a spline or custom mesh. The
+  river chains 8 waypoints from the waterfall's pool, sweeping across the
+  newly expanded southern margin (all at `z <= -3`, below the original
+  clearing's `z = -9` southern edge) to the dock. The same helper, with a
+  wider/flatter profile and `M_Dirt` instead of `M_Water`, builds the two
+  dirt roads — visually distinct from the existing grey-tan stone
+  `PathStone` walkway near the house.
+- **`Dock`** (a plank box plus two post cylinders, `M_Trunk`) and
+  **`Boat`** (a `ProceduralBlobMesh` hull with strong non-uniform
+  transform scale for a simple elongated hull shape, plus a small mast)
+  sit together in the front-left corner where the river ends.
+- **Density**: 10 more trees (same `emit_tree` species/material
+  alternation as M0.10), 6 new bare/leafless trees (`emit_bare_tree` — a
+  trunk plus two thin angled branch capsules, no canopy, for variety
+  against the reference image's winter-tree accents), 8 more rocks, 5
+  more bushes, and 10 more grass tufts, all placed in the expanded
+  margin rather than packed into the existing core.
+- **Mobile/performance**: still no textures, no custom shaders, no new
+  physics/colliders, no `Update()`-driven work, no `Instantiate`/
+  `Destroy` calls. `GameObject` count grew from 148 to 254 (the river's 7
+  segments, both roads' 4 segments each, the mountain's 5 blobs, the
+  dock's 3 parts, the boat's 3 parts, and the density props account for
+  exactly the +106). Still well below M02's original prototype footprint.
 
 ## Input System
 

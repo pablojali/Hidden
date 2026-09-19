@@ -251,7 +251,54 @@ Unity prototype — that claim is not made here, only that the geometry,
 materials, and discovery system are all present, wired, and internally
 consistent.
 
-## M0.11+ — not started
+## M0.11 — World Expansion: Mountain, River & Density — implemented, pending Product Owner validation
+
+A content-density and map-size pass on `Level_01_ForestDiorama.unity`,
+requested directly against a reference image of a denser low-poly
+diorama with a river/road/dock. `M02_DioramaPrototype.unity` untouched;
+discovery/camera-controls/UI systems untouched — the existing ~26×26
+core (clearing, path, house, both tree clusters, all 6 `Discoverable`
+targets at their exact M0.8 positions) is left exactly as M0.10 built it.
+Everything new sits in the newly expanded outer margin.
+
+- **Map enlarged ~50%**: pan half 13→20, `DioramaBase` ground scale
+  68→106, `maxZoomDistance` 65→98 and the starting zoom distance 52→78
+  (the same ~1.5× ratio applied to `panBounds`, ground size, and both
+  zoom distances so the wider world frames the same way relative to its
+  own size). `minZoomDistance` (6) untouched.
+- **A mountain "a un costado"**: `Mountain`, a larger/rockier landmark
+  than M0.8's `Hill_01` (itself untouched), built from the same
+  `ProceduralBlobMesh` technique — one tall low-jitter "peak" blob plus
+  four angular base-rock blobs — placed on the right side, beyond the
+  existing right tree cluster.
+- **A waterfall feeding a river**: `Waterfall` is a single tilted slab
+  against the mountain's face; the river is a chained polyline of flat
+  water-colored segments (`emit_water_path`, a new tiny helper reused for
+  the dirt roads too) running from the waterfall's pool across the newly
+  expanded southern margin — entirely below/outside the original
+  clearing — to a small dock and boat in the front-left corner. New
+  material: `M_Water`.
+- **Dirt roads**: two wider, warmer-brown chained strips (new material
+  `M_Dirt`, visually distinct from the existing grey-tan stone
+  `PathStone` walkway) connecting the clearing toward the mountain and
+  toward the dock.
+- **Dock and boat**: a short wooden-plank dock with two posts; a boat
+  built from the same blob generator with strong non-uniform squash for
+  a simple hull, plus a small mast.
+- **Density**: roughly doubled the prop count — 10 more trees, 6 bare
+  (leafless) trees for variety, 8 more rocks, 5 more bushes, and 10 more
+  grass tufts, all in the expanded margin. Scene `GameObject` count grew
+  from 148 to 254.
+
+See `ARCHITECTURE.md` for the full layout and exact figures.
+
+Implemented ≠ validated: placements were reasoned from the existing
+coordinate layout, not seen — this is done once the Product Owner has
+looked at the built APK and confirmed the expanded map, mountain/river/
+dock/boat, and increased density read well together and the original
+core (clearing, house, all 6 targets) still plays exactly as before.
+
+## M0.12+ — not started
 
 The dive-in interaction, the learning-challenge system, localization,
 progression, and save data are future work and intentionally out of scope

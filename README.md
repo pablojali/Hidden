@@ -15,8 +15,9 @@ This repository currently contains **M0.1 — Unity Project Foundation**,
 **M0.4 — Discovery Prototype**, **M0.5 — Hidden World Core Loop**,
 **M0.6 — Discovery UI & Confirmation Feedback**, **M0.7 — First
 Playable / Game Feel**, **M0.8 — First Real Level**, **M0.9 — Polish:
-Camera Framing & Completion Celebration**, and **M0.10 — Visual Vertical
-Slice**. No learning or content systems have been implemented yet — see
+Camera Framing & Completion Celebration**, **M0.10 — Visual Vertical
+Slice**, and **M0.11 — World Expansion: Mountain, River & Density**. No
+learning or content systems have been implemented yet — see
 `Docs/ROADMAP.md` for what's done and what's next,
 `Docs/GAME_DESIGN.md`
 for the design vision, and `Docs/ARCHITECTURE.md`
@@ -73,7 +74,7 @@ Assets/
   ThirdParty/       Reserved for third-party assets (currently empty)
 Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
 Tests/
-  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.10)
+  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.11)
 ```
 
 The still-empty folders (Interaction, Learning, Localization) exist so
@@ -149,7 +150,7 @@ final art, and no longer the primary content scene as of M0.8 — kept
 around as a prototype/test scene. See `Docs/ARCHITECTURE.md` for how the
 camera is structured.
 
-### Running Level 01 — the first real level (M0.8, polished in M0.9, restyled in M0.10)
+### Running Level 01 — the first real level (M0.8, polished in M0.9, restyled in M0.10, expanded in M0.11)
 
 1. Open `Assets/_Project/Scenes/Worlds/Level_01_ForestDiorama.unity`.
 2. Press Play. You should see a small, purpose-built forest diorama — a
@@ -163,11 +164,18 @@ camera is structured.
    grass tufts are gently irregular faceted shapes, the house has a
    chimney/door/window, the two moving figures have arms and a backpack,
    and the ground has a bit more color variation (including a small mossy
-   hollow near the hill).
+   hollow near the hill). As of M0.11 the map is about 50% bigger and
+   noticeably busier: a mountain on the right side has a waterfall
+   feeding a river that winds across the newly opened ground to a small
+   dock and boat, two dirt roads connect the original clearing out toward
+   both, and there are meaningfully more trees, rocks, bushes, and grass
+   tufts throughout — all of it added around the original clearing/house/
+   targets, which are untouched.
 3. Pan and zoom the same way as M02 (mouse drag/scroll in the Editor,
    one-finger drag/two-finger pinch on a touch device) — the same
-   controls, just a wider zoomed-out limit than before, so you can zoom
-   out farther as well as still in close.
+   controls, just a wider zoomed-out limit than before (grown again in
+   M0.11 to match the bigger map), so you can zoom out farther as well as
+   still in close.
 4. There are 6 things to find this time: two static ones near the
    clearing (one easy, one tucked beside a bush), one static one just
    behind the house (only visible once you pan around it), one static one
@@ -287,7 +295,7 @@ The workflow builds an unsigned debug-style APK suitable for testing on your
 own device. Play Store distribution would additionally require a signing
 keystore, which is out of scope for this foundation milestone.
 
-## Current milestone — M0.10
+## Current milestone — M0.11
 
 M0.1 established the technical foundation: project structure, a minimal
 Bootstrap scene, URP rendering, Android/iOS platform configuration, and a
@@ -327,13 +335,17 @@ gently irregular faceted shapes (built from a seeded jittered icosahedron,
 no external mesh assets), the house gained a chimney/door/window, and the
 two moving characters gained arms and a backpack. Discovery, camera, and
 UI behavior are all unchanged — only what the level looks like standing
-still. No learning mechanics, no menus, no localization system, and no
-monetization/backend have been implemented. See `Docs/ROADMAP.md` for
-what's next.
+still. M0.11 enlarged `Level_01_ForestDiorama` about 50% and added a
+mountain/waterfall/river, a dock and boat, dirt roads, and roughly double
+the background prop density — all in the newly expanded margin around
+the original clearing/house/targets, which are untouched; `panBounds` and
+both zoom distances grew to match the bigger map. No learning mechanics,
+no menus, no localization system, and no monetization/backend have been
+implemented. See `Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 
-This foundation (and the M0.2-M0.10 scenes/scripts) were authored in a headless
+This foundation (and the M0.2-M0.11 scenes/scripts) were authored in a headless
 environment without a Unity Editor or Unity command-line tooling installed,
 so the project files could not be opened, compiled, or run by Unity itself
 before committing. All project, scene, and settings files were hand-authored
