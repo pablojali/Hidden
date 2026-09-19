@@ -179,16 +179,16 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   cameraTransform: {fileID: 100101}
   cameraAngle: 50
-  panSpeed: 0.03
-  panSmoothing: 10
+  panSpeed: 0.015
+  panSmoothing: 8
   panBounds:
     serializedVersion: 2
     x: -7
     y: -7
     width: 14
     height: 14
-  zoomSpeed: 0.6
-  zoomSmoothing: 8
+  zoomSpeed: 0.4
+  zoomSmoothing: 7
   minZoomDistance: 8
   maxZoomDistance: 24
 --- !u!1 &100100

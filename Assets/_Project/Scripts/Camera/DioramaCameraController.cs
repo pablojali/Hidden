@@ -17,13 +17,13 @@ namespace Hidden.Camera
         [SerializeField] private float cameraAngle = 50f;
 
         [Header("Pan")]
-        [SerializeField] private float panSpeed = 0.03f;
-        [SerializeField] private float panSmoothing = 10f;
+        [SerializeField] private float panSpeed = 0.015f;
+        [SerializeField] private float panSmoothing = 8f;
         [SerializeField] private Rect panBounds = new Rect(-7f, -7f, 14f, 14f);
 
         [Header("Zoom")]
-        [SerializeField] private float zoomSpeed = 0.6f;
-        [SerializeField] private float zoomSmoothing = 8f;
+        [SerializeField] private float zoomSpeed = 0.4f;
+        [SerializeField] private float zoomSmoothing = 7f;
         [SerializeField] private float minZoomDistance = 8f;
         [SerializeField] private float maxZoomDistance = 24f;
 
