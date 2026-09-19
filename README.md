@@ -117,9 +117,10 @@ project. They intentionally contain no code yet.
    stop, with a visible bob while walking vs. a slower sway while idle. It
    moves on its own; nothing in the scene lets you control it directly.
 5. Play Mode starts fully zoomed out — the whole diorama is visible but
-   nothing is in discovery range yet. Zoom in on the character (within
-   about 15 units) and it should pulse briefly (scale up and back) the
-   first time it's spotted, then never again. That's the
+   nothing is in discovery range yet (discovery only becomes possible once
+   you've zoomed in at least 2× from that starting view). Zoom in on the
+   character and it should pulse briefly (scale up and back) the first
+   time it's spotted, then never again. That's the
    `DiscoverySystem`/`Discoverable` pair on `Main Camera`/`Character` — no
    UI, counter, or score yet.
 

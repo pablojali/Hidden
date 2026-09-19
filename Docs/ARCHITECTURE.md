@@ -117,11 +117,15 @@ Character
   `Discoverable` targets (one, today: the `Character`) and a camera
   reference (defaults to the `Camera` on the same object, then
   `Camera.main`). Each `Update()` it checks, per undiscovered target:
-  distance ≤ `discoveryRange` (15 units), inside the camera's viewport
+  distance ≤ `discoveryRange`, inside the camera's viewport
   (`WorldToViewportPoint`, expanded by `viewportMargin`) and in front of
   it, and — only if `requireLineOfSight` is enabled — an unobstructed
   `Physics.Linecast` against `lineOfSightMask`. It never reaches into
-  `CharacterMover`; it only calls `target.Discover()`.
+  `CharacterMover`; it only calls `target.Discover()`. `discoveryRange` is
+  scene-tuned rather than fixed: `M02_DioramaPrototype.unity` sets it to
+  half the camera's `maxZoomDistance` (47.5 of 95), so discovery only
+  becomes possible once the player has zoomed in at least 2× from the
+  fully-zoomed-out starting view.
 - **Line-of-sight note**: no world geometry in `M02_DioramaPrototype.unity`
   has a `Collider` yet (M0.2 deliberately skipped colliders — nothing to
   occlude against, and none needed for camera-only exploration). With

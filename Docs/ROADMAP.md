@@ -45,17 +45,21 @@ The M0.2 diorama's footprint was enlarged twice during tuning (~2.5×, then
 another ~1.3×, positions only — prop sizes unchanged) with pan bounds/zoom
 range widened to match: at the original size the whole world fit on screen
 almost regardless of camera position, so "discovered" was meaningless
-(always true). More trees and rocks were scattered across the larger area
-so it doesn't read as empty. Camera pan sensitivity was softened for a
-gentler, kid-friendlier feel; zoom was tuned in the opposite direction
-(faster/more agile) since the zoom range is now much wider — Play Mode
-starts fully zoomed out (the whole diorama visible, nothing in discovery
-range) and zooming in on the character brings it into range.
+(always true). Trees, rocks, bushes, and houses were then tripled in count
+(11→33, 11→33, 3→9, 1→3) and scattered across the world so it reads as a
+full, lived-in place rather than a handful of props in empty space. Camera
+pan sensitivity was softened for a gentler, kid-friendlier feel; zoom was
+tuned in the opposite direction (faster/more agile) since the zoom range is
+now much wider. Play Mode starts fully zoomed out (the whole diorama
+visible, nothing discoverable yet), and `discoveryRange` is set to half the
+camera's max zoom distance, so discovery only becomes possible once the
+player has zoomed in at least 2× from that starting view.
 
 Implemented ≠ validated: this milestone is done once the Product Owner has
 confirmed on device that the character is genuinely out of range at the
-starting zoomed-out view, and that zooming in on it triggers the discovery
-pulse exactly once.
+starting zoomed-out view, that discovery only becomes possible after
+zooming in meaningfully, and that it triggers the discovery pulse exactly
+once.
 
 ## M0.5+ — not started
 
