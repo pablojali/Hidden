@@ -14,9 +14,10 @@ This repository currently contains **M0.1 — Unity Project Foundation**,
 **M0.2 — 3D Diorama Prototype**, **M0.3 — Living Character Prototype**,
 **M0.4 — Discovery Prototype**, **M0.5 — Hidden World Core Loop**,
 **M0.6 — Discovery UI & Confirmation Feedback**, **M0.7 — First
-Playable / Game Feel**, and **M0.8 — First Real Level**. No learning or
-content systems have been implemented yet — see `Docs/ROADMAP.md` for
-what's done and what's next,
+Playable / Game Feel**, **M0.8 — First Real Level**, and **M0.9 — Polish:
+Camera Framing & Completion Celebration**. No learning or content systems
+have been implemented yet — see `Docs/ROADMAP.md` for what's done and
+what's next,
 `Docs/GAME_DESIGN.md`
 for the design vision, and `Docs/ARCHITECTURE.md`
 for technical detail.
@@ -57,7 +58,7 @@ Assets/
       Characters/   CharacterMover, CharacterPath, CharacterVisual (M0.3)
       Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
                     DiscoveryPulseFeedback, CompletionFeedback (M0.4/M0.5),
-                    FireworkEffect (M0.7)
+                    FireworkEffect (M0.7), CompletionCelebration (M0.9)
       Levels/       LevelDefinition, LevelInfo (M0.8)
       UI/           DiscoveryUI (M0.6, trimmed in M0.7)
       World/        (empty placeholder — future world/diorama systems)
@@ -72,7 +73,7 @@ Assets/
   ThirdParty/       Reserved for third-party assets (currently empty)
 Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
 Tests/
-  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.8)
+  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.9)
 ```
 
 The still-empty folders (World, Interaction, Learning, Localization, UI)
@@ -147,16 +148,20 @@ final art, and no longer the primary content scene as of M0.8 — kept
 around as a prototype/test scene. See `Docs/ARCHITECTURE.md` for how the
 camera is structured.
 
-### Running Level 01 — the first real level (M0.8)
+### Running Level 01 — the first real level (M0.8, polished in M0.9)
 
 1. Open `Assets/_Project/Scenes/Worlds/Level_01_ForestDiorama.unity`.
 2. Press Play. You should see a small, purpose-built forest diorama — a
    clearing and path leading toward a house, flanked by two stands of
    trees and a low hill with a rock nook — from the same fixed elevated
-   camera as M02, starting at a partial zoom that shows the clearing and
-   path clearly but not everything beyond it.
+   camera as M02. As of M0.9 the opening view is much wider than a first
+   pass: the whole diorama should read as one small miniature world at a
+   glance, not a close-in crop of part of it, while the 6 hidden things
+   still aren't obviously visible from there.
 3. Pan and zoom the same way as M02 (mouse drag/scroll in the Editor,
-   one-finger drag/two-finger pinch on a touch device).
+   one-finger drag/two-finger pinch on a touch device) — the same
+   controls, just a wider zoomed-out limit than before, so you can zoom
+   out farther as well as still in close.
 4. There are 6 things to find this time: two static ones near the
    clearing (one easy, one tucked beside a bush), one static one just
    behind the house (only visible once you pan around it), one static one
@@ -165,14 +170,17 @@ camera is structured.
    stands. Not all of them are visible from where you start — that's
    deliberate, see `Docs/ARCHITECTURE.md` for the layout and the reasoning
    behind each target's placement.
-5. Discovery, feedback, and completion behave exactly as in M02: a spark
-   burst at the target's position, the top-left counter (now "0 / 6")
-   updating immediately, and a light-brightening cue once all 6 are found,
-   after which nothing resets or reloads.
+5. Discovery and the counter behave exactly as before: a spark burst at
+   the target's position, the top-left counter (now "0 / 6") updating
+   immediately. Completion is now a two-part cue: the same light-brighten
+   pulse from before, plus (new in M0.9) a much bigger burst of sparks
+   that fills the view in front of you — the diorama still visible through
+   it — clearly different from any single discovery. Nothing resets or
+   reloads afterward.
 
 This level is the first one built specifically to test whether searching
 this world is actually satisfying, not just technically functional — see
-`Docs/ROADMAP.md`'s M0.8 entry for what "done" means for this milestone.
+`Docs/ROADMAP.md`'s M0.8 and M0.9 entries for what "done" means for each.
 
 ### Building for Android
 
@@ -273,7 +281,7 @@ The workflow builds an unsigned debug-style APK suitable for testing on your
 own device. Play Store distribution would additionally require a signing
 keystore, which is out of scope for this foundation milestone.
 
-## Current milestone — M0.8
+## Current milestone — M0.9
 
 M0.1 established the technical foundation: project structure, a minimal
 Bootstrap scene, URP rendering, Android/iOS platform configuration, and a
@@ -300,13 +308,18 @@ scene, `Level_01_ForestDiorama`, built around the discovery loop rather
 than being an enlarged version of the M0.2 blockout, with 6 targets laid
 out so not everything is visible from the starting camera position — see
 `Docs/ARCHITECTURE.md` for the layout. `M02_DioramaPrototype` is kept as
-a prototype/test scene. No learning mechanics, no menus, no localization
-system, and no monetization/backend have been implemented. See
-`Docs/ROADMAP.md` for what's next.
+a prototype/test scene. M0.9 is a polish pass on `Level_01_ForestDiorama`
+only: the opening camera view is now much wider (reads as a small
+miniature world at a glance rather than a close-in crop), and finding the
+level's 6th target now triggers a much bigger, screen-covering
+`CompletionCelebration` burst alongside the existing light-pulse cue — no
+new mechanics, no "LEVEL COMPLETED" screen. No learning mechanics, no
+menus, no localization system, and no monetization/backend have been
+implemented. See `Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 
-This foundation (and the M0.2-M0.8 scenes/scripts) were authored in a headless
+This foundation (and the M0.2-M0.9 scenes/scripts) were authored in a headless
 environment without a Unity Editor or Unity command-line tooling installed,
 so the project files could not be opened, compiled, or run by Unity itself
 before committing. All project, scene, and settings files were hand-authored

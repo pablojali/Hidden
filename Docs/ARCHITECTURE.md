@@ -15,7 +15,7 @@ Assets/_Project/
     Characters/   CharacterMover, CharacterPath, CharacterVisual (see below)
     Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
                   DiscoveryPulseFeedback, CompletionFeedback,
-                  FireworkEffect (see below)
+                  FireworkEffect, CompletionCelebration (see below)
     Levels/       LevelDefinition, LevelInfo (see below)
     UI/           DiscoveryUI (see below)
     World/, Interaction/, Learning/, Localization/
@@ -306,7 +306,8 @@ World
   Props           13 trees, 4 bushes, 6 rocks, 7 path stones, 1 stump
   Paths           Target_04_Path, Target_06_Path (CharacterPath waypoint routes)
   Discoverables   Target_01 .. Target_06
-  Camera          CameraInput, DioramaCameraController, Main Camera (DiscoverySystem)
+  Camera          CameraInput, DioramaCameraController, Main Camera
+                   (DiscoverySystem, CompletionCelebration rig)
   GameSystems     GameBootstrap, DiscoveryManager, CompletionFeedback,
                    FireworkEffect rig, LevelInfo
   UI              DiscoveryCanvas, ProgressText
@@ -354,17 +355,18 @@ World
     (a small gold sphere for static targets, the established character rig
     for moving ones) — difficulty comes from placement and occlusion, not
     from disguising what a target looks like.
-- **Starting camera**: the rig starts offset toward the entrance
-  (`(0, 0, -6)`) at a mid-range zoom distance (24, between a new
-  `minZoomDistance` of 6 and `maxZoomDistance` of 40) — enough to read the
-  clearing, path, and the house/tree silhouettes beyond it, not enough to
-  resolve `Target_02`, `Target_04`, `Target_05`, or `Target_06` from that
-  view alone. `panBounds` was shrunk to match this smaller, ~26×26 world
-  (down from M02's ~45×45); `discoveryRange` was retuned to 10 for the
-  same reason `DiscoverySystem`'s range has always been scene-tuned rather
-  than fixed (M0.4). `cameraAngle` (50°), pan/zoom speed and smoothing are
-  untouched from M0.2 — the camera itself was reviewed only for fit, not
-  redesigned, per this milestone's explicit scope.
+- **Starting camera** (widened in M0.9 — see below): the rig starts offset
+  toward the entrance (`(0, 0, -6)`) at a zoom distance of 52, between
+  `minZoomDistance` (6, unchanged) and `maxZoomDistance` (65, widened in
+  M0.9) — enough to read the whole diorama as one small world at a glance,
+  not enough to resolve `Target_02`, `Target_04`, `Target_05`, or
+  `Target_06` from that view alone. `panBounds` was shrunk to match this
+  smaller, ~26×26 world (down from M02's ~45×45); `discoveryRange` was
+  retuned to 10 for the same reason `DiscoverySystem`'s range has always
+  been scene-tuned rather than fixed (M0.4). `cameraAngle` (50°), pan/zoom
+  speed and smoothing are untouched from M0.2 — the camera itself was
+  reviewed only for fit, not redesigned, per this milestone's explicit
+  scope.
 - **`LevelDefinition`** (`Scripts/Levels/LevelDefinition.cs`) is a small
   `ScriptableObject` — `levelId`, `displayName`, `expectedTargetCount`,
   and a computed `IsValid` — with one asset,
@@ -377,11 +379,61 @@ World
   `DiscoveryManager.TotalTargets` to flag a mismatch. This is the entire
   "level data" layer this milestone introduces — no level list, no level
   loader, no generalized pipeline.
-- **Mobile/performance**: the new scene has 109 `GameObject`s total (vs.
+- **Mobile/performance**: the scene has 126 `GameObject`s total (vs.
   M02's much larger prototype footprint), no new shaders, no textures, no
   particle systems, and no new physics — `DiscoverySystem`'s existing
   range/viewport checks are the only per-frame discovery cost, unchanged
   from M0.4.
+
+## Polish: camera framing & completion celebration (M0.9)
+
+Applied to `Level_01_ForestDiorama.unity` only — `M02_DioramaPrototype.unity`
+was left untouched per explicit direction this round.
+
+- **Wider starting camera**: `DioramaCameraController.maxZoomDistance` went
+  from 40 to 65 and the scene's starting zoom distance from 24 to 52 (80%
+  of the new max) — the Main Camera child's initial local position/rotation
+  were recomputed from the same `cameraAngle`/distance trigonometry M0.8
+  used, nothing structural changed. `minZoomDistance` (6) is untouched, so
+  zooming in close enough to inspect a target is unaffected. `panBounds`,
+  `cameraAngle`, `panSpeed`/`panSmoothing`, and `zoomSpeed`/`zoomSmoothing`
+  are all untouched — only the two distance limits and the starting
+  distance changed, per this milestone's "adjust defaults/limits, don't
+  redesign" scope. `DioramaBase`'s scale grew from 41 to 68, proportional
+  to the zoom increase, purely so the ground still fills the frame at the
+  new starting distance instead of showing the flat background color past
+  its edge.
+- **`CompletionCelebration`** (`Scripts/Discovery/CompletionCelebration.cs`)
+  is architecturally a sibling of `FireworkEffect`: a persistent rig of
+  pre-placed spark `Transform`s (16, vs. `FireworkEffect`'s 8), animated by
+  the same shape of sine-curve expand-then-fade in `Update()`, no
+  `Instantiate`/`Destroy`, no per-frame allocation. The one structural
+  difference is where the rig lives: `FireworkEffect`'s rig sits under
+  `GameSystems` and is repositioned to a world point per discovery;
+  `CompletionCelebration`'s rig is parented directly to `Main Camera`'s
+  `Transform` at local `(0, 0, 10)` (10 units along the camera's own
+  forward axis) and never repositioned, so it rides along with every pan
+  and zoom automatically — no camera-tracking code needed — and always
+  reads as centered in view. `burstDuration` (1.1s vs. 0.6s) and
+  `burstRadius` (3.5 vs. 0.9) are both larger, and a `horizontalSpread`
+  factor (0.6) keeps the spark pattern proportioned to the portrait screen
+  rather than a perfect circle. Because the sparks are small spheres, not
+  a full-screen quad, the diorama stays visible through and around the
+  burst rather than being covered by it.
+- **Wiring**: `CompletionCelebration` subscribes to
+  `DiscoveryManager.OnCompleted` the same one-directional way
+  `FireworkEffect` subscribes to `OnDiscovery` — `DiscoveryManager` still
+  has no reference to either. `DiscoveryManager.OnCompleted` already fires
+  at most once per manager (M0.5's `completedFired` flag);
+  `CompletionCelebration.Play()` adds a second, independent `HasPlayed`
+  guard so the celebration itself cannot restart even if `Play()` were
+  ever called more than once for any other reason. `CompletionFeedback`
+  (the M0.5 light-pulse cue) is untouched and still runs alongside it —
+  this milestone added a second completion cue, it didn't replace the
+  first one.
+- **No new screens or systems**: no "LEVEL COMPLETED" screen, no buttons,
+  no menus, no grayscale transition, no scoring — explicitly out of scope
+  for this milestone.
 
 ## Input System
 

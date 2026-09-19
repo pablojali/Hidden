@@ -76,6 +76,16 @@ puzzle laid flat on the table. Whether that search is actually enjoyable,
 rather than just technically working, is what this level is for finding
 out — not asserted here as a finished result.
 
+The level now opens on a noticeably wider view than its first pass — the
+whole diorama reads as one small, complete miniature world the instant
+Play starts, rather than a close-in crop of it, while still leaving the
+6 hidden things unresolved at that distance. And where finishing the level
+previously only brightened the world's light, finding the last thing now
+also sets off a much bigger burst of sparks that fills the view in front
+of the player (the diorama still visible through and around it) — meant
+to read as a clearly different, bigger moment than any single discovery,
+without yet being a "you win" screen of any kind.
+
 ## Out of scope for now
 
 Character interaction, learning challenges, puzzles, rewards, progression,

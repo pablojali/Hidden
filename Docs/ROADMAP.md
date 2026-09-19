@@ -165,7 +165,55 @@ Implemented ≠ validated, and this one is explicitly not yet claimed to be
 on device and confirmed that looking around the diorama and finding its
 6 targets is actually satisfying, not just technically functional.
 
-## M0.9+ — not started
+## M0.9 — Polish: Camera Framing & Completion Celebration — implemented, pending Product Owner validation
+
+A polish pass on `Level_01_ForestDiorama.unity` requested before continuing
+level-design work, addressing two pieces of direct feedback rather than
+adding new mechanics. `M02_DioramaPrototype.unity` was left untouched, per
+explicit direction this round.
+
+**Wider starting camera.** The opening view now shows substantially more
+of the diorama — `DioramaCameraController.maxZoomDistance` went from 40 to
+65 and the scene's starting zoom distance from 24 to 52 (80% of the new
+max), so the level reads as a small living miniature world at a glance
+rather than a close-in crop, without putting every target in plain sight.
+`minZoomDistance` (6) is untouched, so close-in inspection still works
+exactly as before. `panBounds`, `cameraAngle`, and pan/zoom speed/smoothing
+are all untouched — this is a defaults/limits change, not a camera
+redesign. `DioramaBase`'s scale grew from 41 to 68 (proportional to the
+zoom increase) purely so the ground still fills the frame at the new,
+farther starting distance; nothing about its material or the rest of the
+diorama's layout changed.
+
+**Completion celebration.** A new `CompletionCelebration` component
+(`Scripts/Discovery/CompletionCelebration.cs`) plays a clearly bigger,
+longer spark burst when the 6th target is found — 16 sparks over ~1.1s,
+vs. `FireworkEffect`'s 8 sparks over 0.6s per discovery. It's the same
+architecture as `FireworkEffect` (a persistent, pre-placed rig animated by
+one shared sine curve, no per-frame allocation, never
+instantiated/destroyed) but parented to the Main Camera in camera-local
+space instead of a world position, so the burst always reads as covering
+the screen — with the diorama still visible around and behind it — no
+matter where the camera has panned or zoomed to. It subscribes to
+`DiscoveryManager.OnCompleted` the same one-directional way
+`FireworkEffect` subscribes to `OnDiscovery`; `DiscoveryManager` still has
+no reference back. `DiscoveryManager.OnCompleted` already only fires once
+per manager (M0.5), and `CompletionCelebration.Play()` adds its own
+`HasPlayed` guard on top, so the celebration cannot play twice regardless
+of how it's triggered. `CompletionFeedback`'s existing light-pulse cue is
+untouched and still runs alongside it. No "LEVEL COMPLETED" screen, no
+buttons, no menus, no grayscale transition, no scoring — none of that was
+added, per explicit scope.
+
+See `ARCHITECTURE.md` for the exact numbers and wiring.
+
+Implemented ≠ validated: this milestone is done once the Product Owner has
+confirmed on device that the wider opening view actually reads as "a small
+living world," that discovery-firework and counter behavior are unchanged,
+and that the completion celebration feels clearly different from — and
+better than — a single discovery, without asserting here that it does.
+
+## M0.10+ — not started
 
 The dive-in interaction, the learning-challenge system, localization,
 progression, and save data are future work and intentionally out of scope
