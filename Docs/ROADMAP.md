@@ -14,8 +14,9 @@ plane, bootstrap entry point). No gameplay, art, or content systems.
 First playable 3D blockout: a small primitives-only forest diorama
 (`Assets/_Project/Scenes/Worlds/M02_DioramaPrototype.unity`) viewed from a
 fixed-angle elevated perspective camera, with mouse pan/zoom in the Editor
-and an input architecture ready for touch. Validates composition, depth,
-and camera framing only — **not final art**.
+and one-finger-drag/pinch pan/zoom on touch devices, sharing the same
+camera controller. Validates composition, depth, and camera framing only
+— **not final art**.
 
 Implemented ≠ validated: this milestone is done once the Product Owner has
 tested the scene in Unity Editor Play Mode and confirmed the camera feel,

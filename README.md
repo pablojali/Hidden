@@ -105,9 +105,11 @@ restructuring the project. They intentionally contain no code yet.
    terrain, hills, a house, trees, bushes, rocks, a path) from a fixed
    elevated perspective camera — no black screen, no missing pipeline.
 3. In the Game view: **left-click and drag** to pan, **scroll wheel** to
-   zoom. Both are clamped (`panBounds`, `minZoomDistance`/
-   `maxZoomDistance` on the `CameraRig`'s `Diorama Camera Controller`
-   component) so you can't pan off the world or zoom through the terrain.
+   zoom. On a touch device (Android build), **one-finger drag** pans and
+   **two-finger pinch** zooms instead. Both are clamped (`panBounds`,
+   `minZoomDistance`/`maxZoomDistance` on the `CameraRig`'s `Diorama Camera
+   Controller` component) so you can't pan off the world or zoom through
+   the terrain.
 
 This is a blockout for testing composition, depth, and camera feel — not
 final art. See `Docs/ARCHITECTURE.md` for how the camera is structured.

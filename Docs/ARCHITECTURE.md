@@ -33,11 +33,12 @@ CameraRig (GameObject, pans in the XZ plane)
 ```
 
 - **`ICameraInputSource`** (`PanDelta`, `ZoomDelta`) is the only thing
-  `DioramaCameraController` depends on for input. `CameraInput` implements
-  it today using the new Input System's `Mouse` device (left-drag → pan,
-  scroll → zoom). A future `TouchCameraInputSource` (one-finger drag →
-  `PanDelta`, pinch → `ZoomDelta`) can implement the same interface and
-  swap in without touching the controller.
+  `DioramaCameraController` depends on for input. `CameraInput` reads both
+  the new Input System's `Mouse` (left-drag → pan, scroll → zoom) and
+  `Touchscreen` (one-finger drag → pan, two-finger pinch → zoom) in the
+  same `Update()` and combines them into one `PanDelta`/`ZoomDelta` pair,
+  so the same component works unchanged in the Editor and on a touch
+  device — no swapping, no controller changes.
 - **Pan** moves the rig's own `Transform` in the XZ plane, clamped to a
   `Rect` (`panBounds`, Inspector-exposed) so the camera can't leave the
   world.
