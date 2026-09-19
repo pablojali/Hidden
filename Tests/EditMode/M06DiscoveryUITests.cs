@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace Hidden.Tests
 {
+    // DiscoveryUI's scope narrowed in M0.7: per-discovery/completion
+    // feedback moved to FireworkEffect/CompletionFeedback (visual, no
+    // text), so only the progress-readout behavior is tested here now.
     public class DiscoveryUITests
     {
         private GameObject managerGo;
@@ -66,62 +69,9 @@ namespace Hidden.Tests
 
             targetB.Discover();
             Assert.AreEqual("2 / 3", ui.CurrentProgressText);
-        }
-
-        [Test]
-        public void ConfirmationFeedback_TriggeredOncePerDiscovery()
-        {
-            ui.Bind(manager);
-
-            targetA.Discover();
-            Assert.AreEqual(1, ui.DiscoveryMessageCount);
-            Assert.IsTrue(ui.IsShowingMessage);
-
-            targetB.Discover();
-            Assert.AreEqual(2, ui.DiscoveryMessageCount);
-
-            // Re-discovering (already-discovered) targetA must not re-trigger --
-            // Discoverable itself is one-shot, from M0.4.
-            targetA.Discover();
-            Assert.AreEqual(2, ui.DiscoveryMessageCount);
-        }
-
-        [Test]
-        public void CompletionFeedback_TriggeredWhenManagerReportsCompletion()
-        {
-            ui.Bind(manager);
-
-            targetA.Discover();
-            targetB.Discover();
-            Assert.AreEqual(0, ui.CompletionMessageCount);
 
             targetC.Discover();
-            Assert.AreEqual(1, ui.CompletionMessageCount);
-            Assert.IsTrue(manager.IsComplete);
-        }
-
-        [Test]
-        public void ConfigurableConfirmationText_IsUsedInsteadOfAHardcodedString()
-        {
-            ui.Bind(manager);
-            ui.Configure(new[] { "Custom found message" }, "Custom completion message");
-
-            targetA.Discover();
-
-            Assert.AreEqual("Custom found message", ui.CurrentMessage);
-        }
-
-        [Test]
-        public void ConfigurableCompletionText_IsUsed()
-        {
-            ui.Bind(manager);
-            ui.Configure(new[] { "Custom found message" }, "Custom completion message");
-
-            targetA.Discover();
-            targetB.Discover();
-            targetC.Discover();
-
-            Assert.AreEqual("Custom completion message", ui.CurrentMessage);
+            Assert.AreEqual("3 / 3", ui.CurrentProgressText);
         }
 
         [Test]
@@ -133,7 +83,7 @@ namespace Hidden.Tests
             targetB.Discover();
 
             // The UI only reads TotalTargets/DiscoveredCount and subscribes
-            // to events -- it never calls a manager method that could
+            // to OnDiscovery -- it never calls a manager method that could
             // mutate state, so the manager's own counters must reflect
             // exactly what the two Discover() calls produced, nothing more.
             Assert.AreEqual(3, manager.TotalTargets);

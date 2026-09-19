@@ -103,7 +103,43 @@ confirmed on device that the progress counter updates immediately, the
 confirmation pop-in reads clearly without covering the diorama, and the
 completion message is visibly distinct from a normal discovery.
 
-## M0.7+ — not started
+**Superseded in M0.7**: device testing showed the per-discovery/completion
+text competing with the diorama for attention, and on the test device the
+progress counter's top-right corner placement was obstructed by the
+phone's front-camera cutout. M0.7 replaced the text with a visual-only
+firework effect and moved the counter to the top-left. The progress
+readout itself (now numbers only, no message text) remains from this
+milestone.
+
+## M0.7 — First Playable / Game Feel — implemented, pending Product Owner validation
+
+First validation pass on the whole loop as one playable session, not a
+new feature set. Per-discovery feedback changed from M0.6's pop-in text to
+a short, visual-only spark burst (`FireworkEffect`, in `Scripts/Discovery`)
+at the discovered target's position — a single persistent, reusable rig
+(never instantiated/destroyed) that subscribes to `DiscoveryManager`'s
+existing `OnDiscovery` event the same way `DiscoveryUI` does.
+`DiscoveryUI` itself was trimmed back to just the progress readout, now
+top-left (numbers only, no background) instead of top-right, which the
+front-camera cutout on the test device was covering. `DiscoveryManager`
+gained a minimal `SessionState` (`Playing`/`Completed`) — a read-only view
+over state it already tracked since M0.5, not a new framework. Also fixed:
+`ProjectSettings/GraphicsSettings.asset` had an empty
+`m_AlwaysIncludedShaders` list, a known cause of legacy UI Text/Shadow
+rendering as solid magenta/purple in a build when nothing else in the
+project references the `UI/Default` shader as a material asset — added it
+explicitly. Character speeds, pauses, discovery range, and target
+placement were reviewed and left as-is; they were already tuned through
+several prior rounds of direct device feedback and hold up under the
+M0.7 checklist. See `ARCHITECTURE.md`.
+
+Implemented ≠ validated: this milestone is done once the Product Owner has
+run through the full manual checklist in the M0.7 report on device,
+confirming in particular that the purple/magenta UI issue is actually
+fixed, the progress counter is now visible, and the firework reads clearly
+without any confirmation text.
+
+## M0.8+ — not started
 
 The dive-in interaction, the learning-challenge system, localization,
 progression, and save data are future work and intentionally out of scope

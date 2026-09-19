@@ -13,7 +13,8 @@ Assets/_Project/
     Camera/       CameraInput, DioramaCameraController (see below)
     Characters/   CharacterMover, CharacterPath, CharacterVisual (see below)
     Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
-                  DiscoveryPulseFeedback, CompletionFeedback (see below)
+                  DiscoveryPulseFeedback, CompletionFeedback,
+                  FireworkEffect (see below)
     UI/           DiscoveryUI (see below)
     World/, Interaction/, Learning/, Localization/
                   empty placeholders for future milestones
@@ -202,58 +203,93 @@ DiscoveryManager (GameObject)
   so a UI milestone could read/subscribe to it without any change to this
   layer — M0.6 (below) is that milestone.
 
-## Discovery UI architecture (M0.6)
+## Discovery UI architecture (M0.6, revised M0.7)
 
 ```
 DiscoveryCanvas (Screen Space - Overlay, CanvasScaler 1080x1920)
-  - DiscoveryUI       subscribes to DiscoveryManager.OnDiscovery/OnCompleted
-  ProgressText        top-right corner, "{DiscoveredCount} / {TotalTargets}"
-  ConfirmationText     lower-center, CanvasGroup-faded, pop+fade animation
+  - DiscoveryUI       subscribes to DiscoveryManager.OnDiscovery
+  ProgressText        top-left corner, "{DiscoveredCount} / {TotalTargets}"
 ```
 
 - **`DiscoveryUI`** depends on `DiscoveryManager` in one direction only:
   it holds a reference to read `TotalTargets`/`DiscoveredCount` and
-  subscribes to `OnDiscovery`/`OnCompleted`. `DiscoveryManager` has no
-  field, event, or method that knows `DiscoveryUI` (or any UI) exists —
-  same shape as `CharacterVisual` → `Discoverable` and
-  `DiscoveryPulseFeedback` → `Discoverable`. `DiscoveryUI` never calls a
-  mutating method on `DiscoveryManager`, only reads it, so gameplay state
-  can't be affected by whether a UI is even present. No UI singleton: one
-  `DiscoveryUI` on one `Canvas`, wired via a normal Inspector reference,
-  is all this milestone needs.
+  subscribes to `OnDiscovery`. `DiscoveryManager` has no field, event, or
+  method that knows `DiscoveryUI` (or any UI) exists — same shape as
+  `CharacterVisual` → `Discoverable` and `DiscoveryPulseFeedback` →
+  `Discoverable`. `DiscoveryUI` never calls a mutating method on
+  `DiscoveryManager`, only reads it, so gameplay state can't be affected
+  by whether a UI is even present. No UI singleton: one `DiscoveryUI` on
+  one `Canvas`, wired via a normal Inspector reference, is all this
+  milestone needs.
 - **Progress** (`ProgressText`) updates the moment `OnDiscovery` fires —
-  no animation, no delay, always current. It's deliberately small
-  (46pt), semi-transparent (alpha 0.85), tucked in the top-right corner
-  with a soft drop shadow for legibility against the diorama rather than
-  a background panel, so it reads as *discreet* rather than a HUD.
-- **Confirmation/completion** (`ConfirmationText`) is empty and invisible
-  (`CanvasGroup.alpha = 0`) until the first discovery. Each
-  `OnDiscovery`/`OnCompleted` call sets its text and starts a timer;
-  `Update()` drives a single sine-curve pop-and-fade over that timer
-  (`messageDuration` ≈1.3s per discovery, `completionMessageDuration`
-  ≈1.8s with a larger `completionPopScale` for a "slightly stronger" but
-  still minimal completion beat) — one curve, no per-frame allocation, no
-  coroutines.
-- **Microcopy is data, not code**: `discoveryMessages` (a list, so
-  variants can rotate later) and `completionMessage` are `DiscoveryUI`
-  Inspector fields, also settable via `Configure(...)`. Neither
-  `DiscoveryManager` nor `DiscoverySystem` contain a single user-facing
-  string. A future localization system replaces `Configure(...)`'s source
-  (e.g. a language table) without touching either of those files.
-  - Chosen: **"There you are!"** per discovery, **"All found!"** on
-    completion. Alternatives considered: "Found!" (safe but flat, no
-    warmth); "You found someone!" / "You found them all!" (personifies
-    the target, which breaks for `HiddenGem` — it isn't "someone");
-    "Found one!" (fine but generic); "Nothing left to find!" (accurate
-    but reads slightly deflating for a positive moment). "There you are!"
-    reads instantly, is warm without being childish, works identically
-    whether the target is a person-like character or an object (a
-    universal thing to say on finding something hidden), and translates
-    naturally ("¡Ahí estás!", "Te voilà !"). "All found!" mirrors that
-    same target-agnostic quality for completion.
+  no animation, no delay, always current. It's plain white digits with a
+  soft drop shadow for legibility against the diorama, no background
+  panel — reads as *discreet* rather than a HUD.
+- **No per-discovery or completion text** — see "First playable / game
+  feel (M0.7)" below for why and what replaced it.
 - **No victory screen, counter beyond the corner readout, stars, score,
   timer, hints, sound, particles, or localization system** — explicitly
-  out of scope for this milestone.
+  out of scope.
+
+## First playable / game feel (M0.7)
+
+```
+DiscoveryManager
+  - State (SessionState: Playing | Completed)   computed from IsComplete
+
+FireworkEffect (GameObject, persistent, never instantiated/destroyed)
+  - FireworkEffect    subscribes to DiscoveryManager.OnDiscovery
+  8x Spark_XX          pre-placed child Transforms, scaled to 0 at rest
+```
+
+- **`DiscoveryManager.SessionState`** (`Playing`/`Completed`) is a
+  read-only computed property (`IsComplete ? Completed : Playing`) over
+  state `DiscoveryManager` has tracked since M0.5 — not a new state
+  framework, no field added, nothing else needed to observe it beyond
+  reading the property or the existing `OnCompleted` event it's derived
+  from. Because `IsComplete`/`completedFired` were already strictly
+  one-shot (M0.5), `State` flipping to `Completed` and staying there, and
+  further discoveries after completion not changing anything, both fall
+  out of the existing guarantees rather than needing new code.
+- **`FireworkEffect`** replaced M0.6's per-discovery/completion text
+  (`ConfirmationText`) after device testing showed the text competing
+  with the diorama for attention and needing future translation for no
+  real benefit. It's a single rig of 8 primitive "spark" child
+  `Transform`s, placed once in the scene and never instantiated or
+  destroyed at runtime — `Play(position)` just repositions the rig and
+  resets a timer; `Update()` expands and fades all 8 sparks along one
+  shared sine curve read from that timer. No `Instantiate`/`Destroy`
+  calls, no per-frame allocation, no particle system — satisfies the
+  milestone's performance constraints while giving a clearer, faster,
+  translation-free acknowledgment than the text it replaced. It
+  subscribes to `DiscoveryManager.OnDiscovery` the same one-directional
+  way `DiscoveryUI` does; `DiscoveryManager` has no knowledge it exists.
+- **Progress counter moved top-left.** On the test device (Galaxy S10e)
+  the front-camera cutout sits top-right, obstructing the M0.6 placement.
+  `ProgressText`'s anchors/pivot were flipped to top-left; no other
+  behavior changed. It was already background-free (`Text` + `Shadow`
+  only), so the "no purple/no background, just the numbers" request was
+  a rendering fix (below), not a layout one.
+- **Purple/magenta UI fix**: `ProjectSettings/GraphicsSettings.asset` had
+  an empty `m_AlwaysIncludedShaders` list. Legacy `Text` (and its
+  `Shadow`) use the `UI/Default` shader implicitly (`m_Material:
+  {fileID: 0}`), with no on-disk `Material` asset anywhere in the project
+  referencing it — a known way for a shader to get stripped from a build
+  and fall back to Unity's solid-magenta "missing shader" rendering.
+  Fixed by explicitly listing the built-in `UI/Default` shader
+  (`{fileID: 10770, guid: 0000000000000000f000000000000000, type: 0}`)
+  in `m_AlwaysIncludedShaders`, guaranteeing it's always included.
+- **Game feel review**: character speed/pause/turn timing, discovery
+  range, feedback timing, and target placement (from M0.3–M0.5) were
+  re-checked against this milestone's checklist and left unchanged —
+  they were already tuned through several rounds of direct device
+  feedback (see M0.4's roadmap entry) and still hold up as one coherent
+  session. The camera (M0.2) was reviewed only for fit with the above and
+  was not redesigned.
+- **No player movement, joystick, combat, inventory, hints, timer,
+  score, stars, lives, monetization, ads, sound/music, save data,
+  multiple levels, level select, localization, analytics, or backend
+  integration** — explicitly out of scope for this milestone.
 
 ## Input System
 

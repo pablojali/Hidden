@@ -12,6 +12,17 @@ namespace Hidden.Discovery
     // touches progress; that responsibility lives here alone.
     public class DiscoveryManager : MonoBehaviour
     {
+        // M0.7: a minimal session state -- Playing until every target is
+        // found, then Completed, forever (IsComplete/completedFired below
+        // already guarantee this can't un-happen or double-fire). This is
+        // a thin, read-only view over state DiscoveryManager already
+        // tracked since M0.5, not a new framework.
+        public enum SessionState
+        {
+            Playing,
+            Completed
+        }
+
         [SerializeField] private List<Discoverable> targets = new List<Discoverable>();
 
         public event Action<Discoverable> OnDiscovery;
@@ -24,6 +35,7 @@ namespace Hidden.Discovery
         public int TotalTargets => targets.Count;
         public int DiscoveredCount => discoveredSet.Count;
         public bool IsComplete => TotalTargets > 0 && DiscoveredCount >= TotalTargets;
+        public SessionState State => IsComplete ? SessionState.Completed : SessionState.Playing;
 
         // Exposed so both Unity's own Awake() and EditMode tests (which
         // can't rely on Unity's lifecycle timing) can wire registration

@@ -48,13 +48,21 @@ a score screen — the loop is "explore → discover → discover → discover �
 done."
 
 The player now gets a small, quiet acknowledgment for each find — a short
-line of text that appears and fades near where they're looking, plus a
-discreet running count tucked in a corner — instead of wondering silently
-whether something registered. It stays out of the way on purpose: no
-score, no menu, nothing that turns the diorama into a dashboard. The tone
-of that acknowledgment ("There you are!") is meant to feel like greeting
-something you were looking for, not like a game telling you "+1" — warm
-and a little wondrous, not mechanical.
+spark burst right where the thing was hiding — instead of wondering
+silently whether something registered, plus a discreet running count
+tucked in a corner. It stays out of the way on purpose: no score, no menu,
+nothing that turns the diorama into a dashboard. An earlier version of
+this acknowledgment used a pop-in line of text ("There you are!"); after
+seeing it on device, the text was dropped in favor of the visual spark —
+it reads faster, doesn't compete with the diorama for attention, and
+doesn't need translating later.
+
+A full playthrough now reads as one small, complete session: the world is
+immediately explorable the moment it opens (no tutorial, nothing to
+dismiss first), and finding the third thing gives a clearly bigger,
+different response (the world's light) than finding the first or second —
+so the player knows without being told that the session is over. Nothing
+resets or reloads; the finished diorama just sits there to be looked at.
 
 ## Out of scope for now
 

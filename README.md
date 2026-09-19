@@ -12,10 +12,11 @@ Spanish, and French localization are planned.
 
 This repository currently contains **M0.1 — Unity Project Foundation**,
 **M0.2 — 3D Diorama Prototype**, **M0.3 — Living Character Prototype**,
-**M0.4 — Discovery Prototype**, **M0.5 — Hidden World Core Loop**, and
-**M0.6 — Discovery UI & Confirmation Feedback**. No learning or content
-systems have been implemented yet — see `Docs/ROADMAP.md` for what's done
-and what's next, `Docs/GAME_DESIGN.md`
+**M0.4 — Discovery Prototype**, **M0.5 — Hidden World Core Loop**,
+**M0.6 — Discovery UI & Confirmation Feedback**, and **M0.7 — First
+Playable / Game Feel**. No learning or content systems have been
+implemented yet — see `Docs/ROADMAP.md` for what's done and what's next,
+`Docs/GAME_DESIGN.md`
 for the design vision, and `Docs/ARCHITECTURE.md`
 for technical detail.
 
@@ -53,8 +54,9 @@ Assets/
       Camera/       CameraInput, DioramaCameraController (M0.2)
       Characters/   CharacterMover, CharacterPath, CharacterVisual (M0.3)
       Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
-                    DiscoveryPulseFeedback, CompletionFeedback (M0.4/M0.5)
-      UI/           DiscoveryUI (M0.6)
+                    DiscoveryPulseFeedback, CompletionFeedback (M0.4/M0.5),
+                    FireworkEffect (M0.7)
+      UI/           DiscoveryUI (M0.6, trimmed in M0.7)
       World/        (empty placeholder — future world/diorama systems)
       Interaction/  (empty placeholder — future interaction systems)
       Learning/     (empty placeholder — future learning-challenge systems)
@@ -65,7 +67,7 @@ Assets/
   ThirdParty/       Reserved for third-party assets (currently empty)
 Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
 Tests/
-  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.6)
+  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.7)
 ```
 
 The still-empty folders (World, Interaction, Learning, Localization, UI)
@@ -125,13 +127,15 @@ project. They intentionally contain no code yet.
    things to find, spread across the map so you have to actually explore:
    `Character` (the M0.3 walker), a second walker `Character2` on the
    opposite side of the diorama, and a static `HiddenGem` tucked next to a
-   bush. A small "0 / 3" readout in the top-right corner tracks progress.
-   Zoom in on each target and it should pulse briefly (scale up and back)
-   *and* pop up a short message ("There you are!") near the bottom of the
-   screen, then never again for that target. Find all 3 and you'll see
-   "All found!" instead, plus the scene's light briefly brightening once —
-   that's `DiscoveryManager` completing the loop. Still no menus, score,
-   or sound.
+   bush. A small "0 / 3" readout in the top-left corner (plain numbers, no
+   background) tracks progress — moved from the top-right in M0.6 because
+   that corner is where a phone's front-camera cutout tends to sit. Zoom in
+   on each target and it should pulse briefly (scale up and back) *and* set
+   off a short spark burst (firework) right where it was found, then never
+   again for that target — as of M0.7 there's no confirmation text, just
+   the visual. Find all 3 and you'll see the scene's light briefly
+   brighten once, and nothing else changes: the diorama stays as it is,
+   nothing resets or reloads. Still no menus, score, or sound.
 
 This is a blockout for testing composition, depth, and camera feel — not
 final art. See `Docs/ARCHITECTURE.md` for how the camera is structured.
@@ -235,7 +239,7 @@ The workflow builds an unsigned debug-style APK suitable for testing on your
 own device. Play Store distribution would additionally require a signing
 keystore, which is out of scope for this foundation milestone.
 
-## Current milestone — M0.6
+## Current milestone — M0.7
 
 M0.1 established the technical foundation: project structure, a minimal
 Bootstrap scene, URP rendering, Android/iOS platform configuration, and a
@@ -248,15 +252,22 @@ camera's `DiscoverySystem` marks a `Discoverable` once it's panned/zoomed
 into range and view, triggering a one-shot visual pulse. M0.5 turned that
 into the first minimal core loop — 3 `Discoverable` targets (two moving,
 one static) tracked by a `DiscoveryManager`, which fires a single
-completion cue once all 3 are found. M0.6 adds the first UI: a discreet
-progress readout and a short pop-in confirmation/completion message,
-driven entirely by subscribing to `DiscoveryManager`'s events. No learning
+completion cue once all 3 are found. M0.6 added the first UI: a discreet
+progress readout and a per-discovery confirmation/completion message,
+driven entirely by subscribing to `DiscoveryManager`'s events. M0.7 is a
+first playable / game-feel validation pass, not a new feature set: the
+per-discovery text was replaced with a lightweight, reusable spark-burst
+effect (`FireworkEffect`), the progress readout moved to the top-left
+corner (a real device's front-camera cutout was covering the top-right),
+a `GraphicsSettings.asset` fix stops legacy UI `Text` from ever rendering
+as solid magenta/purple in a build, and `DiscoveryManager` gained a
+minimal read-only `Playing`/`Completed` session state. No learning
 mechanics, no menus, no localization system, and no monetization/backend
 have been implemented. See `Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 
-This foundation (and the M0.2-M0.6 scenes/scripts) were authored in a headless
+This foundation (and the M0.2-M0.7 scenes/scripts) were authored in a headless
 environment without a Unity Editor or Unity command-line tooling installed,
 so the project files could not be opened, compiled, or run by Unity itself
 before committing. All project, scene, and settings files were hand-authored
