@@ -83,6 +83,69 @@ namespace Hidden.Tests
         }
     }
 
+    public class ProceduralConeMeshTests
+    {
+        [Test]
+        public void Build_SameSeed_IsDeterministic()
+        {
+            var meshA = ProceduralConeMesh.Build(seed: 5, sides: 8, radiusJitter: 0.1f);
+            var meshB = ProceduralConeMesh.Build(seed: 5, sides: 8, radiusJitter: 0.1f);
+
+            CollectionAssert.AreEqual(meshA.vertices, meshB.vertices);
+        }
+
+        [Test]
+        public void Build_ProducesExpectedTriangleCount()
+        {
+            var mesh = ProceduralConeMesh.Build(seed: 3, sides: 8, radiusJitter: 0.08f);
+
+            // One triangle per side face, unshared vertices for flat
+            // shading, no base cap (hidden by the trunk).
+            Assert.AreEqual(24, mesh.vertexCount);
+            Assert.AreEqual(8, mesh.triangles.Length / 3);
+        }
+
+        [Test]
+        public void Build_AllFaceNormalsPointRadiallyOutward()
+        {
+            var mesh = ProceduralConeMesh.Build(seed: 11, sides: 9, radiusJitter: 0.15f);
+            var vertices = mesh.vertices;
+            var normals = mesh.normals;
+            var triangles = mesh.triangles;
+
+            for (var i = 0; i < triangles.Length; i += 3)
+            {
+                var a = vertices[triangles[i]];
+                var b = vertices[triangles[i + 1]];
+                var c = vertices[triangles[i + 2]];
+                var faceCenter = (a + b + c) / 3f;
+                var outward = new Vector3(faceCenter.x, 0f, faceCenter.z);
+                var normal = normals[triangles[i]];
+
+                Assert.Greater(Vector3.Dot(normal, outward), 0f,
+                    "Every side face normal must point away from the cone's central (Y) axis.");
+            }
+        }
+
+        [Test]
+        public void Awake_AssignsMeshToSiblingMeshFilter()
+        {
+            var go = new GameObject("TestCone");
+
+            try
+            {
+                go.AddComponent<ProceduralConeMesh>();
+                var filter = go.GetComponent<MeshFilter>();
+
+                Assert.IsNotNull(filter.sharedMesh, "Awake() should have assigned a generated cone mesh.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+    }
+
     public class Level01VisualSliceSceneTests
     {
         private const string ScenePath = "Assets/_Project/Scenes/Worlds/Level_01_ForestDiorama.unity";
@@ -96,14 +159,19 @@ namespace Hidden.Tests
             {
                 var world = scene.GetRootGameObjects()[0];
 
-                // Trees, bushes, rocks, and grass tufts (original core
-                // area plus the expanded margin) all use the procedural
-                // blob generator now -- a conservative lower bound, not
-                // an exact count, so this doesn't need updating every
+                // Rocks, bushes, and grass tufts (original core area plus
+                // the expanded margin) use the procedural blob generator;
+                // tree canopies use the cone generator instead (the
+                // low-poly conifer silhouette). Conservative lower bounds,
+                // not exact counts, so these don't need updating every
                 // time prop density changes.
                 var blobs = world.GetComponentsInChildren<ProceduralBlobMesh>(true);
-                Assert.GreaterOrEqual(blobs.Length, 27,
-                    "Expected rocks/canopies/bushes/grass tufts to all use ProceduralBlobMesh.");
+                Assert.GreaterOrEqual(blobs.Length, 20,
+                    "Expected rocks/bushes/grass tufts to all use ProceduralBlobMesh.");
+
+                var cones = world.GetComponentsInChildren<ProceduralConeMesh>(true);
+                Assert.GreaterOrEqual(cones.Length, 15,
+                    "Expected tree canopies to all use ProceduralConeMesh.");
 
                 // The discovery chain itself must be completely untouched
                 // by the visual pass.

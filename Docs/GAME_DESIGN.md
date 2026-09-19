@@ -90,9 +90,10 @@ to read as a clearly different, bigger moment than any single discovery,
 without yet being a "you win" screen of any kind.
 
 The diorama's geometry itself is no longer built purely from bare Unity
-primitives: rocks, tree canopies, bushes, and grass tufts are now gently
-irregular, faceted shapes (never two exactly alike, each generated from
-its own seed), the house has a chimney, a door, and a window instead of
+primitives: rocks, bushes, and grass tufts are gently irregular, faceted
+shapes (never two exactly alike, each generated from its own seed), tree
+canopies are proper low-poly pine cones rather than a round shape sitting
+on a stick, the house has a chimney, a door, and a window instead of
 reading as a box with a hat, and the two moving figures have arms and a
 small backpack so they read as little characters rather than a capsule
 with a ball on top. Nothing about how the world plays changed — same loop,

@@ -215,90 +215,73 @@ better than — a single discovery, without asserting here that it does.
 
 ## M0.10 — Visual Vertical Slice — implemented, pending Product Owner validation
 
-> Requested as "M0.9 — Visual Vertical Slice"; renumbered to M0.10 here
-> because M0.9 was already used for the camera/completion-celebration
-> polish pass above (what the request called "M0.8.1"). No functional
-> difference — this is purely a docs numbering fix so the roadmap stays a
-> single sequence.
+> Requested as "M0.9 — Visual Vertical Slice"; kept as M0.10 because M0.9
+> was already used for the camera/completion-celebration polish pass
+> above (what the request called "M0.8.1"). Everything below is still
+> M0.10 — later rounds of this same visual pass (world expansion, tree
+> shape) stay under this one milestone rather than incrementing, per
+> explicit direction, since none of it is a new gameplay milestone.
 
 A visual-only pass on `Level_01_ForestDiorama.unity`: the goal was making
 the level look like the start of a stylized low-poly mobile game rather
 than a collection of primitive Unity shapes, without touching discovery
 logic, camera behavior, or UI. `M02_DioramaPrototype.unity` untouched.
 
-The core technique is a new, tiny procedural mesh generator,
+The core technique is a tiny procedural mesh generator,
 `ProceduralBlobMesh` (`Scripts/World/`) — a jittered, flat-shaded
 icosahedron (20 triangles) built once at startup from a seeded PRNG, no
 external mesh asset, texture, or custom shader involved. One shape,
-different jitter/squash/material per instance, now drives every rock, tree
-canopy, bush, and grass tuft in the scene (33 instances total), replacing
-the perfect Unity primitives they used before. Characters gained arms and
-a small backpack accessory (still static children of the same "Model"
-transform `CharacterVisual` already bobs/sways — no animation system
-changes), and the house gained a chimney, door, and window. A new material
-(`M_Moss`) and a previously-unused one (`M_Ground`) add a bit of ground
-color variation, including one small recessed mossy hollow near the
-hill/rock nook.
+different jitter/squash/material per instance, drives every rock, bush,
+and grass tuft in the scene, replacing the perfect Unity primitives they
+used before. Characters gained arms and a small backpack accessory (still
+static children of the same "Model" transform `CharacterVisual` already
+bobs/sways — no animation system changes), and the house gained a
+chimney, door, and window. A new material (`M_Moss`) and a
+previously-unused one (`M_Ground`) add a bit of ground color variation,
+including one small recessed mossy hollow near the hill/rock nook.
 
-Discoverable target positions, the camera's M0.9 zoom range, and the
-minimal UI/discovery/completion-celebration systems are all untouched —
-this milestone changed what things *look like*, not where they are or how
-discovery works. See `ARCHITECTURE.md` for the full breakdown.
+**Tree canopies were revised twice.** First pass used the same
+`ProceduralBlobMesh` (a rounder, gem-like shape). After seeing it next to
+a reference image of a low-poly diorama, that read as too round for a
+conifer — so canopies now use a second, equally small generator,
+`ProceduralConeMesh` (`Scripts/World/`), the classic tapered low-poly
+pine-tree silhouette: a flat-shaded triangle fan from an apex down to a
+gently jittered base rim, same "build once at startup, no external asset"
+approach as the blob generator. All 23 trees in the scene use it; rocks,
+bushes, and grass tufts stay on the rounder blob shape, which reads
+better for those.
+
+**The map was also enlarged ~50% and given a lot more content**, again
+directly against that reference image: `panBounds` 26×26→40×40,
+`DioramaBase` ground scale 68→106, `maxZoomDistance` 65→98 and the
+starting zoom distance 52→78 (the same ratio scaled up, not redesigned;
+`minZoomDistance` untouched). A mountain (`Mountain`, larger/rockier than
+`Hill_01`, itself untouched) sits on the right side beyond the existing
+tree cluster, with a waterfall (`Waterfall`, a tilted slab, new `M_Water`
+material) feeding a river — a chained polyline of flat water segments
+(`emit_water_path`) running across the newly expanded southern margin,
+entirely outside the original clearing, to a small dock and boat in the
+front-left corner. Two dirt roads (new `M_Dirt` material, visually
+distinct from the existing stone `PathStone` walkway) connect the
+clearing toward the mountain and the dock. Prop density roughly doubled:
+10 more trees, 6 bare/leafless trees for variety, 8 more rocks, 5 more
+bushes, 10 more grass tufts, all in the expanded margin. Scene
+`GameObject` count grew from 126 to 254 across these rounds.
+
+Discoverable target positions (re-verified byte-identical to M0.8 after
+every regeneration), the camera's own controls, and the minimal UI/
+discovery/completion-celebration systems are all untouched throughout —
+every round here changed what things *look like*, not where they are or
+how discovery works. See `ARCHITECTURE.md` for the full breakdown.
 
 Implemented ≠ validated: this milestone is done once the Product Owner has
 looked at the built APK and confirmed it no longer reads as a technical
-Unity prototype — that claim is not made here, only that the geometry,
-materials, and discovery system are all present, wired, and internally
-consistent.
+Unity prototype, the tree/rock/mountain/river shapes read well, and the
+original core (clearing, house, all 6 targets) still plays exactly as
+before — none of that is claimed here, only that the geometry, materials,
+and discovery system are all present, wired, and internally consistent.
 
-## M0.11 — World Expansion: Mountain, River & Density — implemented, pending Product Owner validation
-
-A content-density and map-size pass on `Level_01_ForestDiorama.unity`,
-requested directly against a reference image of a denser low-poly
-diorama with a river/road/dock. `M02_DioramaPrototype.unity` untouched;
-discovery/camera-controls/UI systems untouched — the existing ~26×26
-core (clearing, path, house, both tree clusters, all 6 `Discoverable`
-targets at their exact M0.8 positions) is left exactly as M0.10 built it.
-Everything new sits in the newly expanded outer margin.
-
-- **Map enlarged ~50%**: pan half 13→20, `DioramaBase` ground scale
-  68→106, `maxZoomDistance` 65→98 and the starting zoom distance 52→78
-  (the same ~1.5× ratio applied to `panBounds`, ground size, and both
-  zoom distances so the wider world frames the same way relative to its
-  own size). `minZoomDistance` (6) untouched.
-- **A mountain "a un costado"**: `Mountain`, a larger/rockier landmark
-  than M0.8's `Hill_01` (itself untouched), built from the same
-  `ProceduralBlobMesh` technique — one tall low-jitter "peak" blob plus
-  four angular base-rock blobs — placed on the right side, beyond the
-  existing right tree cluster.
-- **A waterfall feeding a river**: `Waterfall` is a single tilted slab
-  against the mountain's face; the river is a chained polyline of flat
-  water-colored segments (`emit_water_path`, a new tiny helper reused for
-  the dirt roads too) running from the waterfall's pool across the newly
-  expanded southern margin — entirely below/outside the original
-  clearing — to a small dock and boat in the front-left corner. New
-  material: `M_Water`.
-- **Dirt roads**: two wider, warmer-brown chained strips (new material
-  `M_Dirt`, visually distinct from the existing grey-tan stone
-  `PathStone` walkway) connecting the clearing toward the mountain and
-  toward the dock.
-- **Dock and boat**: a short wooden-plank dock with two posts; a boat
-  built from the same blob generator with strong non-uniform squash for
-  a simple hull, plus a small mast.
-- **Density**: roughly doubled the prop count — 10 more trees, 6 bare
-  (leafless) trees for variety, 8 more rocks, 5 more bushes, and 10 more
-  grass tufts, all in the expanded margin. Scene `GameObject` count grew
-  from 148 to 254.
-
-See `ARCHITECTURE.md` for the full layout and exact figures.
-
-Implemented ≠ validated: placements were reasoned from the existing
-coordinate layout, not seen — this is done once the Product Owner has
-looked at the built APK and confirmed the expanded map, mountain/river/
-dock/boat, and increased density read well together and the original
-core (clearing, house, all 6 targets) still plays exactly as before.
-
-## M0.12+ — not started
+## M0.11+ — not started
 
 The dive-in interaction, the learning-challenge system, localization,
 progression, and save data are future work and intentionally out of scope

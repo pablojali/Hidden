@@ -18,13 +18,14 @@ Assets/_Project/
                   FireworkEffect, CompletionCelebration (see below)
     Levels/       LevelDefinition, LevelInfo (see below)
     UI/           DiscoveryUI (see below)
-    World/        ProceduralBlobMesh (see below); Interaction/, Learning/,
-                  Localization/ still empty placeholders for future work
+    World/        ProceduralBlobMesh, ProceduralConeMesh (see below);
+                  Interaction/, Learning/, Localization/ still empty
+                  placeholders for future work
     Editor/       Editor-only tooling (URP asset bootstrap, shader stripping)
   Data/
     Levels/       LevelDefinition ScriptableObject assets, one per level
-  Materials/      Simple URP/Lit materials, flat colors only (M_Moss
-                  added in M0.10, M_Water/M_Dirt added in M0.11)
+  Materials/      Simple URP/Lit materials, flat colors only (M_Moss,
+                  M_Water, M_Dirt added in M0.10)
   Settings/       URP pipeline/renderer assets
 Tests/EditMode/    Structural smoke tests (scene loads, components present)
 ```
@@ -442,14 +443,18 @@ Requested as "M0.9 — Visual Vertical Slice"; numbered M0.10 here since M0.9
 was already the camera/completion-celebration polish above (the request's
 "M0.8.1"). Purely a visual pass on `Level_01_ForestDiorama.unity` —
 `M02_DioramaPrototype.unity` untouched, discovery/camera/UI systems
-untouched.
+untouched. This one milestone covers several rounds of the same visual
+pass (the procedural mesh generators, a world-expansion round, then a
+tree-shape revision) rather than incrementing per round, per explicit
+direction partway through.
 
 ```
 Assets/_Project/Scripts/World/ProceduralBlobMesh.cs
+Assets/_Project/Scripts/World/ProceduralConeMesh.cs
 ```
 
-- **`ProceduralBlobMesh`** is the one new piece of code driving almost all
-  of this milestone's visual change: a `[RequireComponent(typeof(MeshFilter))]`
+- **`ProceduralBlobMesh`** is the piece of code driving most of this
+  milestone's visual change: a `[RequireComponent(typeof(MeshFilter))]`
   `MonoBehaviour` that builds a small flat-shaded "blob" mesh — a unit
   icosahedron (12 vertices, 20 faces) with each of its 12 vertices jittered
   by a seeded `System.Random` and squashed vertically by a configurable
@@ -463,18 +468,27 @@ Assets/_Project/Scripts/World/ProceduralBlobMesh.cs
   geometric center (must point outward) and the triangle's winding is
   flipped if it doesn't — this makes the shape correct regardless of which
   winding convention the source face list happened to use, rather than
-  relying on getting Unity's convention right from memory.
-- **One generator, several dressings**: the same component, with different
-  `seed`/`jitter`/`verticalSquash` values and a different material, now
-  drives every rock (jitter 0.34, most angular), tree canopy (jitter
-  0.14–0.20, rounder, two loose "species" alternating by squash/height),
-  bush (jitter 0.22), and grass tuft (jitter 0.28, small and flat) in the
-  scene — 33 instances total, replacing the perfect spheres they used
-  before. `Discoverable` targets deliberately keep their plain, unjittered
-  sphere mesh (`M_Hidden`, gold) — the contrast between "perfect geometric
-  shape" (something to find) and "organic irregular blob" (environment)
-  is a readability choice, not an oversight; `Level01VisualSliceSceneTests`
-  in `Tests/EditMode/M09VisualSliceTests.cs` asserts a target's own mesh
+  relying on getting Unity's convention right from memory. Drives every
+  rock (jitter 0.34, most angular), bush (jitter 0.22), grass tuft (jitter
+  0.28, small and flat), the mountain's peak and base rocks (see below),
+  and the boat's hull — different `seed`/`jitter`/`verticalSquash`/scale
+  per instance, same component.
+- **`ProceduralConeMesh`** is a second, equally small generator added
+  after seeing the blob-canopy trees next to a reference image of a
+  low-poly diorama — a round blob read as too soft for a conifer. It's a
+  flat-shaded triangle fan from a fixed apex down to a gently jittered
+  base rim (one triangle per side, `sides` configurable, no base cap since
+  a trunk always sits under it), same "build once in `Awake()`, self-
+  correct winding from geometry" approach as the blob generator. All 23
+  tree canopies in the scene use it now (two loose "species" — taller/
+  narrower vs. shorter/fuller — alternating by material, same as before);
+  rocks/bushes/grass/mountain/boat stay on the rounder blob shape, which
+  reads better for those. `Discoverable` targets deliberately keep their
+  plain, unjittered sphere mesh (`M_Hidden`, gold), used nowhere else —
+  the contrast between "perfect geometric shape" (something to find) and
+  "organic faceted prop" (environment) is a readability choice, not an
+  oversight; `Level01VisualSliceSceneTests` in
+  `Tests/EditMode/M09VisualSliceTests.cs` asserts a target's own mesh
   never has a `ProceduralBlobMesh` on it.
 - **House**: the M0.2/M0.8 wall-box-plus-diamond-roof gained a `Chimney`
   (a small offset box, `M_Roof`), a `Door` (a thin box, `M_Bark`), and a
@@ -490,67 +504,33 @@ Assets/_Project/Scripts/World/ProceduralBlobMesh.cs
 - **Ground variation**: `DioramaBase` switched from `M_Terrain` to the
   previously-unused `M_Ground` (a richer grass green), while `Hill_01`
   keeps `M_Terrain`, giving the flat ground and the hill distinct tones. A
-  new material, `M_Moss` (a cooler, deeper green), is used once for
+  material, `M_Moss` (a cooler, deeper green), is used once for
   `MossyHollow` — a shallow, flattened disc sitting just below the main
   ground's surface near the hill/rock nook — a cheap primitive-only way to
   read as a recessed pocket without any terrain deformation. A `FallenLog`
   (rotated cylinder) and a `Crate` (small cube) add minor prop variety
   near the clearing.
-- **Discoverable placement is unchanged**: all 6 targets keep their M0.8
-  positions and design rationale (easy/angle-dependent/occluded/moving/
-  careful-observation/moving) — the richer surrounding geometry (bushes,
-  rocks, the mossy hollow) reinforces the same hiding logic rather than
-  replacing it; nothing needed to move to avoid colliding with the new
-  props.
-- **Mobile/performance**: each blob is 20 triangles built once at startup,
-  never rebuilt; 33 instances is roughly 660 triangles total for every
-  rock/canopy/bush/grass-tuft in the scene combined, negligible on mobile.
-  No textures, no custom shaders, no new physics or colliders, no
-  `Update()`-driven work — the scene's `GameObject` count grew from 126 to
-  148 (new house/character/ground-variety parts), still far below M02's
-  original prototype footprint. No `Instantiate`/`Destroy` calls anywhere
-  in the new code.
-
-## World expansion: mountain, river & density (M0.11)
-
-Also scoped to `Level_01_ForestDiorama.unity` only. Everything below sits
-outside the original ~26×26 core area (clearing/path/house/tree clusters/
-all 6 `Discoverable` targets), which is byte-for-byte unchanged from
-M0.10 — confirmed by re-checking every target's `m_LocalPosition` after
-regenerating the scene.
-
-```
-World
-  Environment   ... + Mountain (Peak + 4 BaseRocks), Waterfall
-  Structures    ... + Dock (Planks + 2 Posts)
-  Props         ... + Boat (Hull + Mast), 2 dirt-road chains (River
-                      reuses the same chain builder, lives under
-                      Environment), +10 trees, +6 BareTrees, +8 rocks,
-                      +5 bushes, +10 grass tufts
-```
-
-- **Map enlarged ~50%**: `PAN_HALF` 13→20 (`panBounds` now 40×40),
-  `DioramaBase` scale 68→106, `maxZoomDistance` 65→98, starting zoom
-  distance 52→78 — the same ratios M0.9 established, scaled up together
-  rather than redesigned. `minZoomDistance` (6) untouched.
-- **`Mountain`** reuses `ProceduralBlobMesh` at larger parameters than
-  `Hill_01` (M0.8, untouched): one tall, low-jitter (0.22) "Peak" blob at
-  radius 6.5, plus four smaller, more angular (jitter 0.3) "BaseRock"
-  blobs clustered at its foot — the same technique as every other rock in
-  the scene, just bigger. Placed on the right side (`(17, 0, 6)`), beyond
-  the existing right tree cluster, so it reads as a landmark on one edge
-  of the diorama rather than crowding the core.
+- **Map enlarged ~50%**, again directly against the reference image:
+  `PAN_HALF` 13→20 (`panBounds` now 40×40), `DioramaBase` scale 68→106,
+  `maxZoomDistance` 65→98, starting zoom distance 52→78 — the same ratios
+  M0.9 established, scaled up together rather than redesigned.
+  `minZoomDistance` (6) untouched.
+- **`Mountain`** ("a un costado" per the request) reuses `ProceduralBlobMesh`
+  at larger parameters than `Hill_01` (M0.8, untouched): one tall,
+  low-jitter (0.22) "Peak" blob at radius 6.5, plus four smaller, more
+  angular (jitter 0.3) "BaseRock" blobs clustered at its foot. Placed on
+  the right side (`(17, 0, 6)`), beyond the existing right tree cluster.
 - **`Waterfall`** is one tilted `MESH_CUBE` slab (`M_Water`) leaned
   against the mountain's near face — no particle system, no shader
   effect, just a static colored slab, consistent with the project's
   "simple shaders" mobile constraint.
-- **The river** is built by a new small helper, `emit_ribbon_segment`
-  (plus `emit_water_path`/`emit_dirt_road` wrappers around it): given two
-  XZ points, it computes the straight-line distance and Y-axis rotation
+- **The river** is built by a small helper, `emit_ribbon_segment` (plus
+  `emit_water_path`/`emit_dirt_road` wrappers around it): given two XZ
+  points, it computes the straight-line distance and Y-axis rotation
   between them and emits one flattened, rotated `MESH_CUBE` spanning that
   distance — a simple chained polyline, not a spline or custom mesh. The
   river chains 8 waypoints from the waterfall's pool, sweeping across the
-  newly expanded southern margin (all at `z <= -3`, below the original
+  expanded southern margin (all at `z <= -3`, below the original
   clearing's `z = -9` southern edge) to the dock. The same helper, with a
   wider/flatter profile and `M_Dirt` instead of `M_Water`, builds the two
   dirt roads — visually distinct from the existing grey-tan stone
@@ -559,18 +539,22 @@ World
   **`Boat`** (a `ProceduralBlobMesh` hull with strong non-uniform
   transform scale for a simple elongated hull shape, plus a small mast)
   sit together in the front-left corner where the river ends.
-- **Density**: 10 more trees (same `emit_tree` species/material
-  alternation as M0.10), 6 new bare/leafless trees (`emit_bare_tree` — a
-  trunk plus two thin angled branch capsules, no canopy, for variety
-  against the reference image's winter-tree accents), 8 more rocks, 5
-  more bushes, and 10 more grass tufts, all placed in the expanded
+- **Density**: 23 trees total (13 original + 10 added, all
+  `ProceduralConeMesh` canopies), 6 bare/leafless trees for variety
+  (`emit_bare_tree` — a trunk plus two thin angled branch capsules, no
+  canopy), 14 rocks, 9 bushes, 20 grass tufts, all placed in the expanded
   margin rather than packed into the existing core.
-- **Mobile/performance**: still no textures, no custom shaders, no new
-  physics/colliders, no `Update()`-driven work, no `Instantiate`/
-  `Destroy` calls. `GameObject` count grew from 148 to 254 (the river's 7
-  segments, both roads' 4 segments each, the mountain's 5 blobs, the
-  dock's 3 parts, the boat's 3 parts, and the density props account for
-  exactly the +106). Still well below M02's original prototype footprint.
+- **Discoverable placement is unchanged throughout**: all 6 targets keep
+  their exact M0.8 positions and design rationale (easy/angle-dependent/
+  occluded/moving/careful-observation/moving), re-verified byte-identical
+  after every scene regeneration — the richer surrounding geometry
+  reinforces the same hiding logic rather than replacing it.
+- **Mobile/performance**: each blob or cone is roughly 20/`sides`
+  triangles built once at startup, never rebuilt. No textures, no custom
+  shaders, no new physics/colliders, no `Update()`-driven work, no
+  `Instantiate`/`Destroy` calls anywhere in the new code. Scene
+  `GameObject` count grew from 126 to 254 across all rounds — still well
+  below M02's original prototype footprint.
 
 ## Input System
 
