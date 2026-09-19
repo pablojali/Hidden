@@ -9,21 +9,31 @@ Clean Unity 6.3 LTS / URP project: folder structure, Git setup, CI (Android
 build via GitHub Actions), a minimal `Bootstrap` scene (camera, light, ground
 plane, bootstrap entry point). No gameplay, art, or content systems.
 
-## M0.2 — 3D Diorama Prototype — implemented, pending Product Owner validation
+## M0.2 — 3D Diorama Prototype — done
 
 First playable 3D blockout: a small primitives-only forest diorama
 (`Assets/_Project/Scenes/Worlds/M02_DioramaPrototype.unity`) viewed from a
 fixed-angle elevated perspective camera, with mouse pan/zoom in the Editor
 and one-finger-drag/pinch pan/zoom on touch devices, sharing the same
-camera controller. Validates composition, depth, and camera framing only
-— **not final art**.
+camera controller. Confirmed rendering and camera framing correctly on a
+real Android device (Galaxy S10e). Composition/depth/camera feel only —
+**not final art**.
+
+## M0.3 — Living Character Prototype — implemented, pending Product Owner validation
+
+Adds one autonomous placeholder character (capsule body + sphere head) that
+walks a 5-waypoint loop through the diorama, pausing and smoothly turning
+at each stop, with a procedural walk-bob/idle-sway to distinguish its two
+states at a glance. The character is not player-controlled and knows
+nothing about camera, input, discovery, or any other system — see
+`ARCHITECTURE.md`.
 
 Implemented ≠ validated: this milestone is done once the Product Owner has
-tested the scene in Unity Editor Play Mode and confirmed the camera feel,
-depth, and readability.
+watched the character move through the world in Play Mode and confirmed it
+makes the world feel alive.
 
-## M0.3+ — not started
+## M0.4+ — not started
 
-Anything beyond camera exploration — characters, the discovery system, the
-learning-challenge system, UI, localization, progression, save data — is
-future work and intentionally out of scope until explicitly requested.
+The discovery system, the learning-challenge system, UI, localization,
+progression, and save data are future work and intentionally out of scope
+until explicitly requested.

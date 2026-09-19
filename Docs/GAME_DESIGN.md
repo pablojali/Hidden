@@ -28,6 +28,13 @@ background elements so it reads as a place with real depth, not a flat
 backdrop — open, readable areas alternate with spots partially hidden by
 terrain or objects.
 
+A single autonomous placeholder character now walks a fixed loop through
+that world — pausing, turning, and continuing on its own, never controlled
+by the player. It's a first test of the "living world" feeling: does a
+figure moving through the diorama make the player want to keep watching?
+This is behavior only, not a character system — no interaction, no
+dialogue, no identity yet.
+
 ## Out of scope for now
 
 The discovery system, character interaction, learning challenges, puzzles,

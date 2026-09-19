@@ -10,11 +10,11 @@ The game draws inspiration from the hidden-object exploration genre but is being
 built with its own original visual identity, characters, and gameplay. English,
 Spanish, and French localization are planned.
 
-This repository currently contains **M0.1 — Unity Project Foundation** and
-**M0.2 — 3D Diorama Prototype**. No gameplay, art, or content systems have
-been implemented yet — see `Docs/ROADMAP.md` for what's done and what's
-next, `Docs/GAME_DESIGN.md` for the design vision, and `Docs/ARCHITECTURE.md`
-for technical detail.
+This repository currently contains **M0.1 — Unity Project Foundation**,
+**M0.2 — 3D Diorama Prototype**, and **M0.3 — Living Character Prototype**.
+No discovery, learning, UI, or content systems have been implemented yet —
+see `Docs/ROADMAP.md` for what's done and what's next, `Docs/GAME_DESIGN.md`
+for the design vision, and `Docs/ARCHITECTURE.md` for technical detail.
 
 ## Technology
 
@@ -48,8 +48,8 @@ Assets/
     Scripts/
       Core/         GameBootstrap and other engine-agnostic core code
       Camera/       CameraInput, DioramaCameraController (M0.2)
+      Characters/   CharacterMover, CharacterPath, CharacterVisual (M0.3)
       World/        (empty placeholder — future world/diorama systems)
-      Characters/   (empty placeholder — future character systems)
       Interaction/  (empty placeholder — future interaction systems)
       Learning/     (empty placeholder — future learning-challenge systems)
       Localization/ (empty placeholder — future localization systems)
@@ -60,12 +60,12 @@ Assets/
   ThirdParty/       Reserved for third-party assets (currently empty)
 Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
 Tests/
-  EditMode/         EditMode smoke tests (GameBootstrap, M0.2 scene/camera)
+  EditMode/         EditMode smoke tests (GameBootstrap, M0.2/M0.3 scene)
 ```
 
-The still-empty folders (World, Characters, Interaction, Learning,
-Localization, UI) exist so those future systems can be added without
-restructuring the project. They intentionally contain no code yet.
+The still-empty folders (World, Interaction, Learning, Localization, UI)
+exist so those future systems can be added without restructuring the
+project. They intentionally contain no code yet.
 
 ## Development
 
@@ -110,6 +110,10 @@ restructuring the project. They intentionally contain no code yet.
    `minZoomDistance`/`maxZoomDistance` on the `CameraRig`'s `Diorama Camera
    Controller` component) so you can't pan off the world or zoom through
    the terrain.
+4. Watch the small character (`Character` in the Hierarchy) walk its
+   5-waypoint loop (`CharacterPath`) — it pauses and turns smoothly at each
+   stop, with a visible bob while walking vs. a slower sway while idle. It
+   moves on its own; nothing in the scene lets you control it directly.
 
 This is a blockout for testing composition, depth, and camera feel — not
 final art. See `Docs/ARCHITECTURE.md` for how the camera is structured.
@@ -213,20 +217,21 @@ The workflow builds an unsigned debug-style APK suitable for testing on your
 own device. Play Store distribution would additionally require a signing
 keystore, which is out of scope for this foundation milestone.
 
-## Current milestone — M0.2
+## Current milestone — M0.3
 
 M0.1 established the technical foundation: project structure, a minimal
 Bootstrap scene, URP rendering, Android/iOS platform configuration, and a
-clean Git setup. M0.2 adds the first playable 3D diorama prototype: a
-primitives-only forest environment and an elevated, mouse-pannable/zoomable
-exploration camera built on an input architecture ready for touch. No
-characters, no hidden-object mechanics, no learning mechanics, no camera
-rotation, no menus, no localization UI, and no monetization/backend have
-been implemented. See `Docs/ROADMAP.md` for what's next.
+clean Git setup. M0.2 added the first playable 3D diorama prototype: a
+primitives-only forest environment and an elevated, mouse/touch-pannable
+exploration camera. M0.3 adds a single autonomous placeholder character
+that walks a waypoint loop through that world, pausing and turning on its
+own — not player-controlled. No discovery system, no learning mechanics,
+no menus, no localization UI, and no monetization/backend have been
+implemented. See `Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 
-This foundation (and the M0.2 scene/scripts) were authored in a headless
+This foundation (and the M0.2/M0.3 scenes/scripts) were authored in a headless
 environment without a Unity Editor or Unity command-line tooling installed,
 so the project files could not be opened, compiled, or run by Unity itself
 before committing. All project, scene, and settings files were hand-authored
