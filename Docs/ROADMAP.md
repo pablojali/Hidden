@@ -139,7 +139,33 @@ confirming in particular that the purple/magenta UI issue is actually
 fixed, the progress counter is now visible, and the firework reads clearly
 without any confirmation text.
 
-## M0.8+ — not started
+## M0.8 — First Real Level — implemented, pending Product Owner validation
+
+First intentionally designed Hidden World level, built to validate whether
+the *search itself* is enjoyable now that M0.7 proved the discovery loop
+works technically — not a new feature set. A new scene,
+`Assets/_Project/Scenes/Worlds/Level_01_ForestDiorama.unity`, holds a
+small, purpose-built diorama with 6 `Discoverable` targets (2 moving, 2
+partially hidden static, 1 easy, 1 requiring closer observation), laid out
+across distinct areas (a clearing/path, a house, two tree stands, a small
+hill/rock nook) so that not every target is visible from the starting
+camera position. `M02_DioramaPrototype.unity` is left untouched as the
+prototype/test scene (option B) — nothing about M0.1–M0.7's architecture
+was rewritten, only reused: the same `CharacterMover`/`CharacterPath`,
+`Discoverable`, `DiscoveryPulseFeedback`, `DiscoveryManager`,
+`DiscoverySystem`, `FireworkEffect`, and `DiscoveryUI` as before, each
+independent of the others exactly as already established. A new, minimal
+`LevelDefinition`/`LevelInfo` pair (`Scripts/Levels/`) only names the level
+and can flag a target-count mismatch — `DiscoveryManager` remains the sole
+owner of discovery progress. See `ARCHITECTURE.md` for the full layout and
+target-by-target design rationale.
+
+Implemented ≠ validated, and this one is explicitly not yet claimed to be
+*fun*: this milestone is done once the Product Owner has played the level
+on device and confirmed that looking around the diorama and finding its
+6 targets is actually satisfying, not just technically functional.
+
+## M0.9+ — not started
 
 The dive-in interaction, the learning-challenge system, localization,
 progression, and save data are future work and intentionally out of scope

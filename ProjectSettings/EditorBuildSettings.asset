@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/Worlds/Level_01_ForestDiorama.unity
+    guid: 2d295e9ebe874ea598f88005898db122
+  - enabled: 1
     path: Assets/_Project/Scenes/Worlds/M02_DioramaPrototype.unity
     guid: 9ff2340ba11849cc9b2e92813a01841f
   - enabled: 1

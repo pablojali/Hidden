@@ -13,9 +13,10 @@ Spanish, and French localization are planned.
 This repository currently contains **M0.1 — Unity Project Foundation**,
 **M0.2 — 3D Diorama Prototype**, **M0.3 — Living Character Prototype**,
 **M0.4 — Discovery Prototype**, **M0.5 — Hidden World Core Loop**,
-**M0.6 — Discovery UI & Confirmation Feedback**, and **M0.7 — First
-Playable / Game Feel**. No learning or content systems have been
-implemented yet — see `Docs/ROADMAP.md` for what's done and what's next,
+**M0.6 — Discovery UI & Confirmation Feedback**, **M0.7 — First
+Playable / Game Feel**, and **M0.8 — First Real Level**. No learning or
+content systems have been implemented yet — see `Docs/ROADMAP.md` for
+what's done and what's next,
 `Docs/GAME_DESIGN.md`
 for the design vision, and `Docs/ARCHITECTURE.md`
 for technical detail.
@@ -46,9 +47,10 @@ Assets/
     Materials/      Shared materials (ground, foliage, rock, path, etc.)
     Prefabs/        Future prefabs
     Scenes/
-      Bootstrap.unity           M0.1 entry-point scene
+      Bootstrap.unity                 M0.1 entry-point scene
       Worlds/
-        M02_DioramaPrototype.unity   M0.2 diorama prototype scene
+        M02_DioramaPrototype.unity      M0.2 prototype/test scene (unchanged since M0.7)
+        Level_01_ForestDiorama.unity    M0.8 first real, designed level
     Scripts/
       Core/         GameBootstrap and other engine-agnostic core code
       Camera/       CameraInput, DioramaCameraController (M0.2)
@@ -56,18 +58,21 @@ Assets/
       Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
                     DiscoveryPulseFeedback, CompletionFeedback (M0.4/M0.5),
                     FireworkEffect (M0.7)
+      Levels/       LevelDefinition, LevelInfo (M0.8)
       UI/           DiscoveryUI (M0.6, trimmed in M0.7)
       World/        (empty placeholder — future world/diorama systems)
       Interaction/  (empty placeholder — future interaction systems)
       Learning/     (empty placeholder — future learning-challenge systems)
       Localization/ (empty placeholder — future localization systems)
       Editor/       Editor-only tooling (URP/material bootstrap)
+    Data/
+      Levels/       LevelDefinition assets, one per level (M0.8)
     Settings/       URP pipeline/renderer assets
     Resources/      Runtime-loaded resources (currently empty)
   ThirdParty/       Reserved for third-party assets (currently empty)
 Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
 Tests/
-  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.7)
+  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.8)
 ```
 
 The still-empty folders (World, Interaction, Learning, Localization, UI)
@@ -138,7 +143,36 @@ project. They intentionally contain no code yet.
    nothing resets or reloads. Still no menus, score, or sound.
 
 This is a blockout for testing composition, depth, and camera feel — not
-final art. See `Docs/ARCHITECTURE.md` for how the camera is structured.
+final art, and no longer the primary content scene as of M0.8 — kept
+around as a prototype/test scene. See `Docs/ARCHITECTURE.md` for how the
+camera is structured.
+
+### Running Level 01 — the first real level (M0.8)
+
+1. Open `Assets/_Project/Scenes/Worlds/Level_01_ForestDiorama.unity`.
+2. Press Play. You should see a small, purpose-built forest diorama — a
+   clearing and path leading toward a house, flanked by two stands of
+   trees and a low hill with a rock nook — from the same fixed elevated
+   camera as M02, starting at a partial zoom that shows the clearing and
+   path clearly but not everything beyond it.
+3. Pan and zoom the same way as M02 (mouse drag/scroll in the Editor,
+   one-finger drag/two-finger pinch on a touch device).
+4. There are 6 things to find this time: two static ones near the
+   clearing (one easy, one tucked beside a bush), one static one just
+   behind the house (only visible once you pan around it), one static one
+   set into the rock/hill nook at the back (small and easy to walk past
+   without looking closely), and two moving ones patrolling the two tree
+   stands. Not all of them are visible from where you start — that's
+   deliberate, see `Docs/ARCHITECTURE.md` for the layout and the reasoning
+   behind each target's placement.
+5. Discovery, feedback, and completion behave exactly as in M02: a spark
+   burst at the target's position, the top-left counter (now "0 / 6")
+   updating immediately, and a light-brightening cue once all 6 are found,
+   after which nothing resets or reloads.
+
+This level is the first one built specifically to test whether searching
+this world is actually satisfying, not just technically functional — see
+`Docs/ROADMAP.md`'s M0.8 entry for what "done" means for this milestone.
 
 ### Building for Android
 
@@ -239,7 +273,7 @@ The workflow builds an unsigned debug-style APK suitable for testing on your
 own device. Play Store distribution would additionally require a signing
 keystore, which is out of scope for this foundation milestone.
 
-## Current milestone — M0.7
+## Current milestone — M0.8
 
 M0.1 established the technical foundation: project structure, a minimal
 Bootstrap scene, URP rendering, Android/iOS platform configuration, and a
@@ -254,20 +288,25 @@ into the first minimal core loop — 3 `Discoverable` targets (two moving,
 one static) tracked by a `DiscoveryManager`, which fires a single
 completion cue once all 3 are found. M0.6 added the first UI: a discreet
 progress readout and a per-discovery confirmation/completion message,
-driven entirely by subscribing to `DiscoveryManager`'s events. M0.7 is a
-first playable / game-feel validation pass, not a new feature set: the
-per-discovery text was replaced with a lightweight, reusable spark-burst
-effect (`FireworkEffect`), the progress readout moved to the top-left
-corner (a real device's front-camera cutout was covering the top-right),
-a `GraphicsSettings.asset` fix stops legacy UI `Text` from ever rendering
-as solid magenta/purple in a build, and `DiscoveryManager` gained a
-minimal read-only `Playing`/`Completed` session state. No learning
-mechanics, no menus, no localization system, and no monetization/backend
-have been implemented. See `Docs/ROADMAP.md` for what's next.
+driven entirely by subscribing to `DiscoveryManager`'s events. M0.7 was a
+first playable / game-feel validation pass: per-discovery text became a
+lightweight spark-burst effect (`FireworkEffect`), the progress readout
+moved to the top-left corner (a real device's front-camera cutout was
+covering the top-right), a `GraphicsSettings.asset` fix stops legacy UI
+`Text` from ever rendering as solid magenta/purple in a build, and
+`DiscoveryManager` gained a minimal read-only `Playing`/`Completed`
+session state. M0.8 is the first *intentionally designed* level: a new
+scene, `Level_01_ForestDiorama`, built around the discovery loop rather
+than being an enlarged version of the M0.2 blockout, with 6 targets laid
+out so not everything is visible from the starting camera position — see
+`Docs/ARCHITECTURE.md` for the layout. `M02_DioramaPrototype` is kept as
+a prototype/test scene. No learning mechanics, no menus, no localization
+system, and no monetization/backend have been implemented. See
+`Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 
-This foundation (and the M0.2-M0.7 scenes/scripts) were authored in a headless
+This foundation (and the M0.2-M0.8 scenes/scripts) were authored in a headless
 environment without a Unity Editor or Unity command-line tooling installed,
 so the project files could not be opened, compiled, or run by Unity itself
 before committing. All project, scene, and settings files were hand-authored

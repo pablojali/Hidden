@@ -64,6 +64,18 @@ different response (the world's light) than finding the first or second —
 so the player knows without being told that the session is over. Nothing
 resets or reloads; the finished diorama just sits there to be looked at.
 
+A new, small level (`Level_01_ForestDiorama`) puts that loop somewhere
+built specifically for it, rather than the original blockout: a clearing
+and path lead toward a house, flanked by two stands of trees and a low
+hill with a rock nook, so the world reads as a handful of distinct places
+rather than one open field. Six things are hidden across it — two that
+move, two tucked partly out of sight, one easy enough to find first, and
+one that takes real looking — and the starting view deliberately doesn't
+show all of them: what's visible is a place worth walking into, not a
+puzzle laid flat on the table. Whether that search is actually enjoyable,
+rather than just technically working, is what this level is for finding
+out — not asserted here as a finished result.
+
 ## Out of scope for now
 
 Character interaction, learning challenges, puzzles, rewards, progression,

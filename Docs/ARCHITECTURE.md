@@ -7,7 +7,8 @@ Assets/_Project/
   Scenes/
     Bootstrap.unity            M0.1 entry-point scene
     Worlds/
-      M02_DioramaPrototype.unity   M0.2 diorama prototype scene
+      M02_DioramaPrototype.unity      M0.2 prototype/test scene (unchanged since M0.7)
+      Level_01_ForestDiorama.unity    M0.8 first real, designed level
   Scripts/
     Core/         GameBootstrap (target frame rate, entry logging)
     Camera/       CameraInput, DioramaCameraController (see below)
@@ -15,10 +16,13 @@ Assets/_Project/
     Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
                   DiscoveryPulseFeedback, CompletionFeedback,
                   FireworkEffect (see below)
+    Levels/       LevelDefinition, LevelInfo (see below)
     UI/           DiscoveryUI (see below)
     World/, Interaction/, Learning/, Localization/
                   empty placeholders for future milestones
     Editor/       Editor-only tooling (URP asset bootstrap, shader stripping)
+  Data/
+    Levels/       LevelDefinition ScriptableObject assets, one per level
   Materials/      Simple URP/Lit materials, flat colors only
   Settings/       URP pipeline/renderer assets
 Tests/EditMode/    Structural smoke tests (scene loads, components present)
@@ -290,6 +294,94 @@ FireworkEffect (GameObject, persistent, never instantiated/destroyed)
   score, stars, lives, monetization, ads, sound/music, save data,
   multiple levels, level select, localization, analytics, or backend
   integration** — explicitly out of scope for this milestone.
+
+## First real level (M0.8)
+
+```
+Assets/_Project/Scenes/Worlds/Level_01_ForestDiorama.unity
+
+World
+  Environment     ground, hill, Directional Light
+  Structures      House
+  Props           13 trees, 4 bushes, 6 rocks, 7 path stones, 1 stump
+  Paths           Target_04_Path, Target_06_Path (CharacterPath waypoint routes)
+  Discoverables   Target_01 .. Target_06
+  Camera          CameraInput, DioramaCameraController, Main Camera (DiscoverySystem)
+  GameSystems     GameBootstrap, DiscoveryManager, CompletionFeedback,
+                   FireworkEffect rig, LevelInfo
+  UI              DiscoveryCanvas, ProgressText
+```
+
+- **`M02_DioramaPrototype.unity` was left untouched** and remains the
+  prototype/test scene (the milestone's option B) — every object, GUID,
+  and tuned value from M0.1–M0.7 in it is exactly as M0.7 left it.
+  `Level_01_ForestDiorama.unity` is a new, independent scene built by
+  reusing the same verified mesh/material/script GUIDs (trees, rocks,
+  bushes, the house, the character rig, the camera rig, the UI, the
+  firework rig), not by copying and editing M02's file in place — that
+  keeps both scenes internally consistent without one's edits risking the
+  other.
+- **Every system on this scene is the exact same component as M0.1–M0.7**,
+  wired the same one-directional way: `DiscoverySystem` (on `Main Camera`)
+  still only detects; `DiscoveryManager` still only tracks progress by
+  subscribing to each target's `Discovered` event; `Discoverable`,
+  `DiscoveryPulseFeedback`, `CharacterMover`/`CharacterPath`/
+  `CharacterVisual`, `FireworkEffect`, and `DiscoveryUI` are all
+  unmodified. Nothing new was built for movement, detection, feedback, or
+  UI — M0.8 is a level-design milestone, not a systems milestone.
+- **6 `Discoverable` targets**, distributed per the milestone brief (2
+  moving, 2 partially hidden static, 1 easy, 1 requiring closer look):
+  - `Target_01` — static, near the entrance path; deliberately the easiest
+    find, so a first-time player confirms quickly that things here *can*
+    be found.
+  - `Target_02` — static, tucked just behind the house's back-left corner;
+    screened from the starting camera position by the house itself, only
+    resolved once the camera pans to open a sightline past it.
+  - `Target_03` — static, nestled against `Bush_01` at the clearing's
+    left edge; partially occluded by the bush's silhouette rather than
+    hidden outright.
+  - `Target_04` — moving (`CharacterMover` + its own `Target_04_Path`),
+    weaving through the denser right-hand tree stand; found by noticing
+    motion between the trunks, not by spotting a static shape.
+  - `Target_05` — static, smaller-scaled and set into the rock/hill nook
+    at the back-left; the milestone's "requires careful observation"
+    target — found by zooming into that specific pocket of the diorama,
+    not by anything being invisible.
+  - `Target_06` — moving (`CharacterMover` + `Target_06_Path`), patrolling
+    the left-hand tree stand on a different route/pace than `Target_04` so
+    the two moving targets don't read as the same thing twice.
+  - All 6 use the same visual language the player learns from `Target_01`
+    (a small gold sphere for static targets, the established character rig
+    for moving ones) — difficulty comes from placement and occlusion, not
+    from disguising what a target looks like.
+- **Starting camera**: the rig starts offset toward the entrance
+  (`(0, 0, -6)`) at a mid-range zoom distance (24, between a new
+  `minZoomDistance` of 6 and `maxZoomDistance` of 40) — enough to read the
+  clearing, path, and the house/tree silhouettes beyond it, not enough to
+  resolve `Target_02`, `Target_04`, `Target_05`, or `Target_06` from that
+  view alone. `panBounds` was shrunk to match this smaller, ~26×26 world
+  (down from M02's ~45×45); `discoveryRange` was retuned to 10 for the
+  same reason `DiscoverySystem`'s range has always been scene-tuned rather
+  than fixed (M0.4). `cameraAngle` (50°), pan/zoom speed and smoothing are
+  untouched from M0.2 — the camera itself was reviewed only for fit, not
+  redesigned, per this milestone's explicit scope.
+- **`LevelDefinition`** (`Scripts/Levels/LevelDefinition.cs`) is a small
+  `ScriptableObject` — `levelId`, `displayName`, `expectedTargetCount`,
+  and a computed `IsValid` — with one asset,
+  `Data/Levels/Level_01_ForestDiorama.asset`, for this level.
+  **`LevelInfo`** (`Scripts/Levels/LevelInfo.cs`) sits in `GameSystems`,
+  holding a reference to that asset and to the scene's `DiscoveryManager`,
+  and exposes `MatchesExpectedTargetCount`. Neither type owns, duplicates,
+  or reaches into discovery logic — `DiscoveryManager` remains the single
+  owner of progress, exactly as after M0.5; `LevelInfo` only *reads*
+  `DiscoveryManager.TotalTargets` to flag a mismatch. This is the entire
+  "level data" layer this milestone introduces — no level list, no level
+  loader, no generalized pipeline.
+- **Mobile/performance**: the new scene has 109 `GameObject`s total (vs.
+  M02's much larger prototype footprint), no new shaders, no textures, no
+  particle systems, and no new physics — `DiscoverySystem`'s existing
+  range/viewport checks are the only per-frame discovery cost, unchanged
+  from M0.4.
 
 ## Input System
 
