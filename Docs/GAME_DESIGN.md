@@ -18,6 +18,9 @@ English, Spanish, and French localization are planned.
 - Colorful but pastel; soft, simple shapes; readable silhouettes.
 - Pleasant, slightly whimsical lighting. Visually clean.
 - Original identity — explicitly not a copy of any other game's style.
+- Stylized low-poly, organic silhouettes rather than perfect primitives —
+  rocks, foliage, and ground clutter are gently irregular, like they were
+  shaped by hand rather than snapped from a geometry menu (M0.10).
 
 ## Core experience (current scope)
 
@@ -85,6 +88,16 @@ also sets off a much bigger burst of sparks that fills the view in front
 of the player (the diorama still visible through and around it) — meant
 to read as a clearly different, bigger moment than any single discovery,
 without yet being a "you win" screen of any kind.
+
+The diorama's geometry itself is no longer built purely from bare Unity
+primitives: rocks, tree canopies, bushes, and grass tufts are now gently
+irregular, faceted shapes (never two exactly alike, each generated from
+its own seed), the house has a chimney, a door, and a window instead of
+reading as a box with a hat, and the two moving figures have arms and a
+small backpack so they read as little characters rather than a capsule
+with a ball on top. Nothing about how the world plays changed — same loop,
+same 6 targets, same camera, same completion beat — only what it looks
+like standing still.
 
 ## Out of scope for now
 

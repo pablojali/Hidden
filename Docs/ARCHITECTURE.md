@@ -18,12 +18,13 @@ Assets/_Project/
                   FireworkEffect, CompletionCelebration (see below)
     Levels/       LevelDefinition, LevelInfo (see below)
     UI/           DiscoveryUI (see below)
-    World/, Interaction/, Learning/, Localization/
-                  empty placeholders for future milestones
+    World/        ProceduralBlobMesh (see below); Interaction/, Learning/,
+                  Localization/ still empty placeholders for future work
     Editor/       Editor-only tooling (URP asset bootstrap, shader stripping)
   Data/
     Levels/       LevelDefinition ScriptableObject assets, one per level
-  Materials/      Simple URP/Lit materials, flat colors only
+  Materials/      Simple URP/Lit materials, flat colors only (M_Moss added,
+                  M_Ground put into use in M0.10)
   Settings/       URP pipeline/renderer assets
 Tests/EditMode/    Structural smoke tests (scene loads, components present)
 ```
@@ -434,6 +435,81 @@ was left untouched per explicit direction this round.
 - **No new screens or systems**: no "LEVEL COMPLETED" screen, no buttons,
   no menus, no grayscale transition, no scoring — explicitly out of scope
   for this milestone.
+
+## Visual vertical slice (M0.10)
+
+Requested as "M0.9 — Visual Vertical Slice"; numbered M0.10 here since M0.9
+was already the camera/completion-celebration polish above (the request's
+"M0.8.1"). Purely a visual pass on `Level_01_ForestDiorama.unity` —
+`M02_DioramaPrototype.unity` untouched, discovery/camera/UI systems
+untouched.
+
+```
+Assets/_Project/Scripts/World/ProceduralBlobMesh.cs
+```
+
+- **`ProceduralBlobMesh`** is the one new piece of code driving almost all
+  of this milestone's visual change: a `[RequireComponent(typeof(MeshFilter))]`
+  `MonoBehaviour` that builds a small flat-shaded "blob" mesh — a unit
+  icosahedron (12 vertices, 20 faces) with each of its 12 vertices jittered
+  by a seeded `System.Random` and squashed vertically by a configurable
+  factor — once in `Awake()`, and assigns it to the sibling `MeshFilter`'s
+  `sharedMesh`. Faces are rendered unshared (60 vertices for 20 triangles)
+  with per-face flat normals, so the shape reads as faceted/low-poly rather
+  than smoothly rounded, without any custom shader — the existing flat-
+  color URP/Lit materials render it correctly as-is. Because there's no
+  Unity Editor available to check the icosahedron reference face list's
+  winding visually, each face's normal is verified against its own
+  geometric center (must point outward) and the triangle's winding is
+  flipped if it doesn't — this makes the shape correct regardless of which
+  winding convention the source face list happened to use, rather than
+  relying on getting Unity's convention right from memory.
+- **One generator, several dressings**: the same component, with different
+  `seed`/`jitter`/`verticalSquash` values and a different material, now
+  drives every rock (jitter 0.34, most angular), tree canopy (jitter
+  0.14–0.20, rounder, two loose "species" alternating by squash/height),
+  bush (jitter 0.22), and grass tuft (jitter 0.28, small and flat) in the
+  scene — 33 instances total, replacing the perfect spheres they used
+  before. `Discoverable` targets deliberately keep their plain, unjittered
+  sphere mesh (`M_Hidden`, gold) — the contrast between "perfect geometric
+  shape" (something to find) and "organic irregular blob" (environment)
+  is a readability choice, not an oversight; `Level01VisualSliceSceneTests`
+  in `Tests/EditMode/M09VisualSliceTests.cs` asserts a target's own mesh
+  never has a `ProceduralBlobMesh` on it.
+- **House**: the M0.2/M0.8 wall-box-plus-diamond-roof gained a `Chimney`
+  (a small offset box, `M_Roof`), a `Door` (a thin box, `M_Bark`), and a
+  `Window` (a thin box, `M_CharacterHead`'s warm cream tone) — all static
+  primitive children of the same house root, no new mesh work.
+- **Characters**: `Target_04`/`Target_06`'s `Model` hierarchy (from M0.3)
+  gained `ArmLeft`/`ArmRight` (small angled capsules) and a `Backpack`
+  (a small box) alongside the existing `Body`/`Head`. These are static
+  children of `Model`, the same transform `CharacterVisual` already
+  bobs/sways as one piece — `CharacterMover`, `CharacterPath`, and
+  `CharacterVisual` were not touched, so the existing procedural
+  walk/idle animation now moves a richer silhouette for free.
+- **Ground variation**: `DioramaBase` switched from `M_Terrain` to the
+  previously-unused `M_Ground` (a richer grass green), while `Hill_01`
+  keeps `M_Terrain`, giving the flat ground and the hill distinct tones. A
+  new material, `M_Moss` (a cooler, deeper green), is used once for
+  `MossyHollow` — a shallow, flattened disc sitting just below the main
+  ground's surface near the hill/rock nook — a cheap primitive-only way to
+  read as a recessed pocket without any terrain deformation. A `FallenLog`
+  (rotated cylinder) and a `Crate` (small cube) add minor prop variety
+  near the clearing.
+- **Discoverable placement is unchanged**: all 6 targets keep their M0.8
+  positions and design rationale (easy/angle-dependent/occluded/moving/
+  careful-observation/moving) — the richer surrounding geometry (bushes,
+  rocks, the mossy hollow) reinforces the same hiding logic rather than
+  replacing it; nothing needed to move to avoid colliding with the new
+  props.
+- **Mobile/performance**: each blob is 20 triangles built once at startup,
+  never rebuilt; 33 instances is roughly 660 triangles total for every
+  rock/canopy/bush/grass-tuft in the scene combined, negligible on mobile.
+  No textures, no custom shaders, no new physics or colliders, no
+  `Update()`-driven work — the scene's `GameObject` count grew from 126 to
+  148 (new house/character/ground-variety parts), still far below M02's
+  original prototype footprint. No `Instantiate`/`Destroy` calls anywhere
+  in the new code.
 
 ## Input System
 

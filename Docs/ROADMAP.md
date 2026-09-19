@@ -213,7 +213,45 @@ living world," that discovery-firework and counter behavior are unchanged,
 and that the completion celebration feels clearly different from — and
 better than — a single discovery, without asserting here that it does.
 
-## M0.10+ — not started
+## M0.10 — Visual Vertical Slice — implemented, pending Product Owner validation
+
+> Requested as "M0.9 — Visual Vertical Slice"; renumbered to M0.10 here
+> because M0.9 was already used for the camera/completion-celebration
+> polish pass above (what the request called "M0.8.1"). No functional
+> difference — this is purely a docs numbering fix so the roadmap stays a
+> single sequence.
+
+A visual-only pass on `Level_01_ForestDiorama.unity`: the goal was making
+the level look like the start of a stylized low-poly mobile game rather
+than a collection of primitive Unity shapes, without touching discovery
+logic, camera behavior, or UI. `M02_DioramaPrototype.unity` untouched.
+
+The core technique is a new, tiny procedural mesh generator,
+`ProceduralBlobMesh` (`Scripts/World/`) — a jittered, flat-shaded
+icosahedron (20 triangles) built once at startup from a seeded PRNG, no
+external mesh asset, texture, or custom shader involved. One shape,
+different jitter/squash/material per instance, now drives every rock, tree
+canopy, bush, and grass tuft in the scene (33 instances total), replacing
+the perfect Unity primitives they used before. Characters gained arms and
+a small backpack accessory (still static children of the same "Model"
+transform `CharacterVisual` already bobs/sways — no animation system
+changes), and the house gained a chimney, door, and window. A new material
+(`M_Moss`) and a previously-unused one (`M_Ground`) add a bit of ground
+color variation, including one small recessed mossy hollow near the
+hill/rock nook.
+
+Discoverable target positions, the camera's M0.9 zoom range, and the
+minimal UI/discovery/completion-celebration systems are all untouched —
+this milestone changed what things *look like*, not where they are or how
+discovery works. See `ARCHITECTURE.md` for the full breakdown.
+
+Implemented ≠ validated: this milestone is done once the Product Owner has
+looked at the built APK and confirmed it no longer reads as a technical
+Unity prototype — that claim is not made here, only that the geometry,
+materials, and discovery system are all present, wired, and internally
+consistent.
+
+## M0.11+ — not started
 
 The dive-in interaction, the learning-challenge system, localization,
 progression, and save data are future work and intentionally out of scope

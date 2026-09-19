@@ -14,10 +14,10 @@ This repository currently contains **M0.1 — Unity Project Foundation**,
 **M0.2 — 3D Diorama Prototype**, **M0.3 — Living Character Prototype**,
 **M0.4 — Discovery Prototype**, **M0.5 — Hidden World Core Loop**,
 **M0.6 — Discovery UI & Confirmation Feedback**, **M0.7 — First
-Playable / Game Feel**, **M0.8 — First Real Level**, and **M0.9 — Polish:
-Camera Framing & Completion Celebration**. No learning or content systems
-have been implemented yet — see `Docs/ROADMAP.md` for what's done and
-what's next,
+Playable / Game Feel**, **M0.8 — First Real Level**, **M0.9 — Polish:
+Camera Framing & Completion Celebration**, and **M0.10 — Visual Vertical
+Slice**. No learning or content systems have been implemented yet — see
+`Docs/ROADMAP.md` for what's done and what's next,
 `Docs/GAME_DESIGN.md`
 for the design vision, and `Docs/ARCHITECTURE.md`
 for technical detail.
@@ -61,7 +61,7 @@ Assets/
                     FireworkEffect (M0.7), CompletionCelebration (M0.9)
       Levels/       LevelDefinition, LevelInfo (M0.8)
       UI/           DiscoveryUI (M0.6, trimmed in M0.7)
-      World/        (empty placeholder — future world/diorama systems)
+      World/        ProceduralBlobMesh (M0.10)
       Interaction/  (empty placeholder — future interaction systems)
       Learning/     (empty placeholder — future learning-challenge systems)
       Localization/ (empty placeholder — future localization systems)
@@ -73,12 +73,13 @@ Assets/
   ThirdParty/       Reserved for third-party assets (currently empty)
 Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
 Tests/
-  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.9)
+  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.10)
 ```
 
-The still-empty folders (World, Interaction, Learning, Localization, UI)
-exist so those future systems can be added without restructuring the
-project. They intentionally contain no code yet.
+The still-empty folders (Interaction, Learning, Localization) exist so
+those future systems can be added without restructuring the project. They
+intentionally contain no code yet. `World/` holds `ProceduralBlobMesh`
+as of M0.10; `UI/` holds `DiscoveryUI` as of M0.6.
 
 ## Development
 
@@ -148,7 +149,7 @@ final art, and no longer the primary content scene as of M0.8 — kept
 around as a prototype/test scene. See `Docs/ARCHITECTURE.md` for how the
 camera is structured.
 
-### Running Level 01 — the first real level (M0.8, polished in M0.9)
+### Running Level 01 — the first real level (M0.8, polished in M0.9, restyled in M0.10)
 
 1. Open `Assets/_Project/Scenes/Worlds/Level_01_ForestDiorama.unity`.
 2. Press Play. You should see a small, purpose-built forest diorama — a
@@ -157,7 +158,12 @@ camera is structured.
    camera as M02. As of M0.9 the opening view is much wider than a first
    pass: the whole diorama should read as one small miniature world at a
    glance, not a close-in crop of part of it, while the 6 hidden things
-   still aren't obviously visible from there.
+   still aren't obviously visible from there. As of M0.10 the geometry
+   itself is no longer bare primitives: rocks, tree canopies, bushes, and
+   grass tufts are gently irregular faceted shapes, the house has a
+   chimney/door/window, the two moving figures have arms and a backpack,
+   and the ground has a bit more color variation (including a small mossy
+   hollow near the hill).
 3. Pan and zoom the same way as M02 (mouse drag/scroll in the Editor,
    one-finger drag/two-finger pinch on a touch device) — the same
    controls, just a wider zoomed-out limit than before, so you can zoom
@@ -281,7 +287,7 @@ The workflow builds an unsigned debug-style APK suitable for testing on your
 own device. Play Store distribution would additionally require a signing
 keystore, which is out of scope for this foundation milestone.
 
-## Current milestone — M0.9
+## Current milestone — M0.10
 
 M0.1 established the technical foundation: project structure, a minimal
 Bootstrap scene, URP rendering, Android/iOS platform configuration, and a
@@ -313,13 +319,21 @@ only: the opening camera view is now much wider (reads as a small
 miniature world at a glance rather than a close-in crop), and finding the
 level's 6th target now triggers a much bigger, screen-covering
 `CompletionCelebration` burst alongside the existing light-pulse cue — no
-new mechanics, no "LEVEL COMPLETED" screen. No learning mechanics, no
-menus, no localization system, and no monetization/backend have been
-implemented. See `Docs/ROADMAP.md` for what's next.
+new mechanics, no "LEVEL COMPLETED" screen. M0.10 is a visual-only pass on
+`Level_01_ForestDiorama`: a new procedural mesh generator
+(`ProceduralBlobMesh`, in `Scripts/World/`) replaces the perfect Unity
+primitives used for rocks, tree canopies, bushes, and grass tufts with
+gently irregular faceted shapes (built from a seeded jittered icosahedron,
+no external mesh assets), the house gained a chimney/door/window, and the
+two moving characters gained arms and a backpack. Discovery, camera, and
+UI behavior are all unchanged — only what the level looks like standing
+still. No learning mechanics, no menus, no localization system, and no
+monetization/backend have been implemented. See `Docs/ROADMAP.md` for
+what's next.
 
 ## Environment note
 
-This foundation (and the M0.2-M0.9 scenes/scripts) were authored in a headless
+This foundation (and the M0.2-M0.10 scenes/scripts) were authored in a headless
 environment without a Unity Editor or Unity command-line tooling installed,
 so the project files could not be opened, compiled, or run by Unity itself
 before committing. All project, scene, and settings files were hand-authored
