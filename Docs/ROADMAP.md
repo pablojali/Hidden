@@ -32,8 +32,21 @@ Implemented ≠ validated: this milestone is done once the Product Owner has
 watched the character move through the world in Play Mode and confirmed it
 makes the world feel alive.
 
-## M0.4+ — not started
+## M0.4 — Discovery Prototype — implemented, pending Product Owner validation
 
-The discovery system, the learning-challenge system, UI, localization,
+Adds the first minimal discovery mechanic: `DiscoverySystem` (on the
+`Main Camera`) evaluates the world from the camera's point of view —
+range, in-view, optional line-of-sight — and marks a `Discoverable` (on
+the M0.3 `Character`) discovered exactly once. `CharacterVisual` reacts
+with a one-shot scale pulse; `CharacterMover` was not touched and has no
+knowledge discovery exists. See `ARCHITECTURE.md`.
+
+Implemented ≠ validated: this milestone is done once the Product Owner has
+confirmed on device that panning/zooming the character into view triggers
+the discovery pulse exactly once.
+
+## M0.5+ — not started
+
+The dive-in interaction, the learning-challenge system, UI, localization,
 progression, and save data are future work and intentionally out of scope
 until explicitly requested.

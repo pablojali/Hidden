@@ -35,9 +35,15 @@ figure moving through the diorama make the player want to keep watching?
 This is behavior only, not a character system — no interaction, no
 dialogue, no identity yet.
 
+Exploring the world can now genuinely find something: panning/zooming the
+character into camera view marks it discovered and it reacts once. This is
+the first minimal proof of the "discover hidden details" pillar — just the
+detection and a small confirmation, not a system yet (no counter, no
+rewards, no UI acknowledging it happened).
+
 ## Out of scope for now
 
-The discovery system, character interaction, learning challenges, puzzles,
-rewards, progression, inventory, and save data are all designed for later
-milestones and are intentionally not implemented yet. See `ROADMAP.md` for
-what's actually built.
+Character interaction, learning challenges, puzzles, rewards, progression,
+inventory, and save data are all designed for later milestones and are
+intentionally not implemented yet. See `ROADMAP.md` for what's actually
+built.

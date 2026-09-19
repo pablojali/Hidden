@@ -12,6 +12,7 @@ Assets/_Project/
     Core/         GameBootstrap (target frame rate, entry logging)
     Camera/       CameraInput, DioramaCameraController (see below)
     Characters/   CharacterMover, CharacterPath, CharacterVisual (see below)
+    Discovery/    DiscoverySystem, Discoverable (see below)
     World/, Interaction/, Learning/, Localization/, UI/
                   empty placeholders for future milestones
     Editor/       Editor-only tooling (URP asset bootstrap, shader stripping)
@@ -91,6 +92,55 @@ CharacterPath (GameObject)
   meaningfully more risk than a plain scene `GameObject`, for no behavior
   difference at this stage. Converting it to a prefab in the Editor later
   is a trivial drag-and-drop.
+
+## Discovery architecture (M0.4)
+
+```
+Main Camera
+  - DiscoverySystem   evaluates range + in-view (+ optional line-of-sight)
+                       for a list of Discoverable targets, from this
+                       camera's point of view
+
+Character
+  - Discoverable      one-shot discovered flag + Discovered event
+  - CharacterVisual    (already existed) optionally subscribes to
+                       Discovered on the same object -> one-shot scale pulse
+```
+
+- **`Discoverable`** is a tiny, self-contained one-shot flag
+  (`IsDiscovered`, `Discover()`, a `Discovered` event). It has no reference
+  to `DiscoverySystem`, `CharacterMover`, or anything else — a bare
+  `GameObject` with only this component works on its own (see
+  `M04DiscoveryTests.cs`). `Discover()` is idempotent: calling it again
+  after the first time is a no-op and does not re-fire the event.
+- **`DiscoverySystem`** holds an explicit, Inspector-assigned list of
+  `Discoverable` targets (one, today: the `Character`) and a camera
+  reference (defaults to the `Camera` on the same object, then
+  `Camera.main`). Each `Update()` it checks, per undiscovered target:
+  distance ≤ `discoveryRange` (15 units), inside the camera's viewport
+  (`WorldToViewportPoint`, expanded by `viewportMargin`) and in front of
+  it, and — only if `requireLineOfSight` is enabled — an unobstructed
+  `Physics.Linecast` against `lineOfSightMask`. It never reaches into
+  `CharacterMover`; it only calls `target.Discover()`.
+- **Line-of-sight note**: no world geometry in `M02_DioramaPrototype.unity`
+  has a `Collider` yet (M0.2 deliberately skipped colliders — nothing to
+  occlude against, and none needed for camera-only exploration). With
+  `requireLineOfSight` on, the linecast currently always passes trivially.
+  It's implemented and wired correctly for when obstacles get colliders
+  later; `requireLineOfSight` defaults to **off** so today's behavior
+  doesn't silently imply occlusion that isn't actually happening yet.
+- **Feedback** lives entirely in `CharacterVisual` (already the sole owner
+  of the character's cosmetic animation): it looks up a `Discoverable` on
+  the same `GameObject` in `Awake` (nullable — works fine without one) and
+  subscribes to `Discovered`; the handler starts a short timer that layers
+  a sine-curve scale pulse (`discoveryPulseScale`, ~0.5–1s via
+  `discoveryReactionDuration`) on top of whatever bob/sway is already
+  running, then it fades back to normal. Neither `Discoverable` nor
+  `DiscoverySystem` know this reaction exists.
+- **`CanDiscover(Discoverable)`/`SetTargets(...)`/`SetCamera(...)`** are
+  public specifically so tests (and later systems) can drive
+  `DiscoverySystem` deterministically without waiting on `Update()`, the
+  same pattern `CharacterMover.Initialize()` established in M0.3.
 
 ## Input System
 
