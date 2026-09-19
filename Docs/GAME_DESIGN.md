@@ -35,11 +35,19 @@ figure moving through the diorama make the player want to keep watching?
 This is behavior only, not a character system — no interaction, no
 dialogue, no identity yet.
 
-Exploring the world can now genuinely find something: panning/zooming the
-character into camera view marks it discovered and it reacts once. This is
+Exploring the world can now genuinely find something: panning/zooming a
+target into camera view marks it discovered and it reacts once. This is
 the first minimal proof of the "discover hidden details" pillar — just the
 detection and a small confirmation, not a system yet (no counter, no
 rewards, no UI acknowledging it happened).
+
+The world now holds 3 things to find, spread across it on purpose so
+finding all of them means actually scanning the diorama rather than
+staring at one spot: two living figures walking their own separate routes,
+and one still, quieter thing tucked into the scenery. Finding the last one
+gives a small shared moment (the world's own light responding) rather than
+a score screen — the loop is "explore → discover → discover → discover →
+done," nothing more yet.
 
 ## Out of scope for now
 

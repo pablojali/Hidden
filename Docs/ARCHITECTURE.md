@@ -12,7 +12,8 @@ Assets/_Project/
     Core/         GameBootstrap (target frame rate, entry logging)
     Camera/       CameraInput, DioramaCameraController (see below)
     Characters/   CharacterMover, CharacterPath, CharacterVisual (see below)
-    Discovery/    DiscoverySystem, Discoverable (see below)
+    Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
+                  DiscoveryPulseFeedback, CompletionFeedback (see below)
     World/, Interaction/, Learning/, Localization/, UI/
                   empty placeholders for future milestones
     Editor/       Editor-only tooling (URP asset bootstrap, shader stripping)
@@ -114,18 +115,20 @@ Character
   `M04DiscoveryTests.cs`). `Discover()` is idempotent: calling it again
   after the first time is a no-op and does not re-fire the event.
 - **`DiscoverySystem`** holds an explicit, Inspector-assigned list of
-  `Discoverable` targets (one, today: the `Character`) and a camera
-  reference (defaults to the `Camera` on the same object, then
-  `Camera.main`). Each `Update()` it checks, per undiscovered target:
-  distance ≤ `discoveryRange`, inside the camera's viewport
-  (`WorldToViewportPoint`, expanded by `viewportMargin`) and in front of
-  it, and — only if `requireLineOfSight` is enabled — an unobstructed
-  `Physics.Linecast` against `lineOfSightMask`. It never reaches into
-  `CharacterMover`; it only calls `target.Discover()`. `discoveryRange` is
-  scene-tuned rather than fixed: `M02_DioramaPrototype.unity` sets it to
-  half the camera's `maxZoomDistance` (47.5 of 95), so discovery only
-  becomes possible once the player has zoomed in at least 2× from the
-  fully-zoomed-out starting view.
+  `Discoverable` targets (3, as of M0.5) and a camera reference (defaults
+  to the `Camera` on the same object, then `Camera.main`). Each `Update()`
+  it checks, per undiscovered target: distance ≤ `discoveryRange`, inside
+  the camera's viewport (`WorldToViewportPoint`, expanded by
+  `viewportMargin`) and in front of it, and — only if `requireLineOfSight`
+  is enabled — an unobstructed `Physics.Linecast` against
+  `lineOfSightMask`. It never reaches into `CharacterMover`, and it never
+  tracks progress across targets — it only calls `target.Discover()` on
+  each one individually; that's `DiscoveryManager`'s job (M0.5, below).
+  `discoveryRange` is scene-tuned rather than fixed and has been tightened
+  several times during playtesting (`M02_DioramaPrototype.unity` is
+  currently at 25, against a `maxZoomDistance` of 95), so discovery
+  requires deliberately zooming in from the fully-zoomed-out starting view,
+  not just spotting something from far away.
 - **Line-of-sight note**: no world geometry in `M02_DioramaPrototype.unity`
   has a `Collider` yet (M0.2 deliberately skipped colliders — nothing to
   occlude against, and none needed for camera-only exploration). With
@@ -145,6 +148,57 @@ Character
   public specifically so tests (and later systems) can drive
   `DiscoverySystem` deterministically without waiting on `Update()`, the
   same pattern `CharacterMover.Initialize()` established in M0.3.
+
+## Discovery progress architecture (M0.5)
+
+```
+Camera
+  - DiscoverySystem     detects individual targets only (unchanged from M0.4)
+
+DiscoveryManager (GameObject)
+  - DiscoveryManager     owns global progress across a fixed target list
+  - CompletionFeedback   subscribes to DiscoveryManager.OnCompleted
+
+3 Discoverable targets:
+  Character   (M0.3 mover, CharacterVisual pulse)
+  Character2  (same mover/path/visual components, separate route)
+  HiddenGem   (static, DiscoveryPulseFeedback pulse)
+```
+
+- **`DiscoveryManager`** is the single owner of cross-target progress
+  (`TotalTargets`, `DiscoveredCount`, `IsComplete`, `OnDiscovery`,
+  `OnCompleted`). It does this by subscribing to each registered target's
+  own `Discovered` event (unchanged from M0.4) — `Discoverable` never
+  references `DiscoveryManager` back, so it stays exactly as independent
+  and reusable as M0.4 left it. `RegisterTargets(...)` (mirroring
+  `CharacterMover.Initialize()`/`DiscoverySystem.SetTargets()`) lets both
+  `Awake()` and tests wire it deterministically. Re-discovering a target,
+  or the manager holding zero targets, cannot throw or double-count:
+  `IsComplete` is `false` whenever `TotalTargets == 0`, and a `HashSet`
+  plus a `completedFired` flag make `OnDiscovery`/`OnCompleted` strictly
+  one-shot per target/manager.
+- **`DiscoverySystem` still only detects** — it has no concept of "global
+  progress" and was not changed to track it; that separation is
+  deliberate per this milestone's spec.
+- **Target 2 (`Character2`)** reuses `CharacterMover`, `CharacterPath`, and
+  `CharacterVisual` completely unchanged on a second GameObject with its
+  own 4-waypoint `Character2Path` on the opposite side of the diorama —
+  no new movement code, per the milestone's explicit instruction not to
+  build a second movement system.
+- **Target 3 (`HiddenGem`)** is a static prop (no `CharacterMover`) tucked
+  next to an existing bush. Its discovery feedback is
+  **`DiscoveryPulseFeedback`**, a new minimal component (scale pulse only,
+  no bob/sway) so a non-moving target doesn't need `CharacterVisual`'s
+  `CharacterMover` dependency — `CharacterVisual` itself is untouched and
+  still only used by the two moving targets.
+- **`CompletionFeedback`** is the milestone's one required "all 3 found"
+  cue: on `DiscoveryManager.OnCompleted` it briefly boosts the scene's
+  directional light intensity, then restores it. No UI, no audio, no
+  particles, nothing on a per-frame budget beyond a single `Light` field
+  write while the pulse is active.
+- **No UI anywhere.** `DiscoveryManager`'s public progress API
+  (`TotalTargets`/`DiscoveredCount`/`IsComplete`/events) exists so a future
+  UI milestone can read/subscribe to it without any change to this layer.
 
 ## Input System
 

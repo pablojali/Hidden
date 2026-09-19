@@ -11,10 +11,11 @@ built with its own original visual identity, characters, and gameplay. English,
 Spanish, and French localization are planned.
 
 This repository currently contains **M0.1 — Unity Project Foundation**,
-**M0.2 — 3D Diorama Prototype**, **M0.3 — Living Character Prototype**, and
-**M0.4 — Discovery Prototype**. No learning, UI, or content systems have
-been implemented yet — see `Docs/ROADMAP.md` for what's done and what's
-next, `Docs/GAME_DESIGN.md` for the design vision, and `Docs/ARCHITECTURE.md`
+**M0.2 — 3D Diorama Prototype**, **M0.3 — Living Character Prototype**,
+**M0.4 — Discovery Prototype**, and **M0.5 — Hidden World Core Loop**. No
+learning, UI, or content systems have been implemented yet — see
+`Docs/ROADMAP.md` for what's done and what's next, `Docs/GAME_DESIGN.md`
+for the design vision, and `Docs/ARCHITECTURE.md`
 for technical detail.
 
 ## Technology
@@ -50,7 +51,8 @@ Assets/
       Core/         GameBootstrap and other engine-agnostic core code
       Camera/       CameraInput, DioramaCameraController (M0.2)
       Characters/   CharacterMover, CharacterPath, CharacterVisual (M0.3)
-      Discovery/    DiscoverySystem, Discoverable (M0.4)
+      Discovery/    DiscoverySystem, Discoverable, DiscoveryManager,
+                    DiscoveryPulseFeedback, CompletionFeedback (M0.4/M0.5)
       World/        (empty placeholder — future world/diorama systems)
       Interaction/  (empty placeholder — future interaction systems)
       Learning/     (empty placeholder — future learning-challenge systems)
@@ -62,7 +64,7 @@ Assets/
   ThirdParty/       Reserved for third-party assets (currently empty)
 Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
 Tests/
-  EditMode/         EditMode smoke tests (GameBootstrap, M0.2/M0.3/M0.4)
+  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.5)
 ```
 
 The still-empty folders (World, Interaction, Learning, Localization, UI)
@@ -118,11 +120,14 @@ project. They intentionally contain no code yet.
    moves on its own; nothing in the scene lets you control it directly.
 5. Play Mode starts fully zoomed out — the whole diorama is visible but
    nothing is in discovery range yet (discovery only becomes possible once
-   you've zoomed in at least 2× from that starting view). Zoom in on the
-   character and it should pulse briefly (scale up and back) the first
-   time it's spotted, then never again. That's the
-   `DiscoverySystem`/`Discoverable` pair on `Main Camera`/`Character` — no
-   UI, counter, or score yet.
+   you've zoomed in meaningfully from that starting view). There are 3
+   things to find, spread across the map so you have to actually explore:
+   `Character` (the M0.3 walker), a second walker `Character2` on the
+   opposite side of the diorama, and a static `HiddenGem` tucked next to a
+   bush. Zoom in on each and it should pulse briefly (scale up and back)
+   the first time it's spotted, then never again. Find all 3 and the
+   scene's light briefly brightens once — that's `DiscoveryManager`
+   completing the loop. Still no UI, counter, or score.
 
 This is a blockout for testing composition, depth, and camera feel — not
 final art. See `Docs/ARCHITECTURE.md` for how the camera is structured.
@@ -226,7 +231,7 @@ The workflow builds an unsigned debug-style APK suitable for testing on your
 own device. Play Store distribution would additionally require a signing
 keystore, which is out of scope for this foundation milestone.
 
-## Current milestone — M0.4
+## Current milestone — M0.5
 
 M0.1 established the technical foundation: project structure, a minimal
 Bootstrap scene, URP rendering, Android/iOS platform configuration, and a
@@ -234,16 +239,18 @@ clean Git setup. M0.2 added the first playable 3D diorama prototype: a
 primitives-only forest environment and an elevated, mouse/touch-pannable
 exploration camera. M0.3 added a single autonomous placeholder character
 that walks a waypoint loop through that world, pausing and turning on its
-own — not player-controlled. M0.4 adds the first discovery mechanic: the
-camera's `DiscoverySystem` marks the character `Discoverable` once it's
-panned/zoomed into range and view, triggering a one-shot visual pulse. No
-learning mechanics, no menus, no localization UI, and no
-monetization/backend have been implemented. See `Docs/ROADMAP.md` for
-what's next.
+own — not player-controlled. M0.4 added the first discovery mechanic: the
+camera's `DiscoverySystem` marks a `Discoverable` once it's panned/zoomed
+into range and view, triggering a one-shot visual pulse. M0.5 turns that
+into the first minimal core loop — 3 `Discoverable` targets (two moving,
+one static) tracked by a new `DiscoveryManager`, which fires a single
+completion cue once all 3 are found. No learning mechanics, no menus, no
+localization UI, and no monetization/backend have been implemented. See
+`Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 
-This foundation (and the M0.2/M0.3/M0.4 scenes/scripts) were authored in a headless
+This foundation (and the M0.2-M0.5 scenes/scripts) were authored in a headless
 environment without a Unity Editor or Unity command-line tooling installed,
 so the project files could not be opened, compiled, or run by Unity itself
 before committing. All project, scene, and settings files were hand-authored
