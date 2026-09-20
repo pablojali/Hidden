@@ -61,9 +61,10 @@ Assets/
                     FireworkEffect (M0.7), CompletionCelebration (M0.9)
       Levels/       LevelDefinition, LevelInfo (M0.8)
       UI/           DiscoveryUI (M0.6, trimmed in M0.7)
-      World/        ProceduralBlobMesh, ProceduralConeMesh (unused in the
-                    current scene), ProceduralClusterMesh,
-                    ProceduralTrunkMesh (M0.10)
+      World/        ProceduralBlobMesh, ProceduralTrunkMesh,
+                    OrganicRevolutionMesh, OrganicRockMesh (M0.10);
+                    ProceduralConeMesh + ProceduralClusterMesh kept but
+                    unused in the current scene
       Interaction/  (empty placeholder — future interaction systems)
       Learning/     (empty placeholder — future learning-challenge systems)
       Localization/ (empty placeholder — future localization systems)
@@ -81,9 +82,10 @@ Tests/
 The still-empty folders (Interaction, Learning, Localization) exist so
 those future systems can be added without restructuring the project. They
 intentionally contain no code yet. `World/` holds `ProceduralBlobMesh`,
-`ProceduralConeMesh` (no longer referenced by the current scene),
-`ProceduralClusterMesh`, and `ProceduralTrunkMesh` as of M0.10; `UI/`
-holds `DiscoveryUI` as of M0.6.
+`ProceduralTrunkMesh`, `OrganicRevolutionMesh`, and `OrganicRockMesh` as
+of M0.10, plus `ProceduralConeMesh` and `ProceduralClusterMesh` (kept but
+no longer referenced by the current scene); `UI/` holds `DiscoveryUI` as
+of M0.6.
 
 ## Development
 
@@ -366,11 +368,21 @@ every edge of the map now, not just the center: a deterministic,
 exclusion-aware scatter pass added many more trees/bushes/rock
 formations plus a large amount of small ground detail (pebbles, grass,
 flower clusters) along the riverbank, around the mountain, and out to
-the map's corners, alongside a few gentle terrain elevation knolls.
-Discovery, camera controls, and UI behavior are all unchanged — only what
-the level looks like standing still. No learning mechanics, no menus, no
-localization system, and no monetization/backend have been implemented.
-See `Docs/ROADMAP.md` for what's next.
+the map's corners, alongside a few gentle terrain elevation knolls. A
+second correction round then addressed why that still read as "faceted
+primitives": every earlier shape used flat shading (a hard normal per
+triangle) plus high-frequency per-vertex jitter, which is what made them
+look like visible triangles rather than rounded organic forms.
+`OrganicRevolutionMesh` (a single smooth, shared-vertex mesh revolved
+from a hand-authored profile curve) now builds every tree canopy, bush
+clump, mushroom cap, and flower bloom; `OrganicRockMesh` (a smooth
+icosphere with a few large, low-frequency bumps) now builds every rock,
+pebble, terrain knoll, and the mountain's peak — `ProceduralClusterMesh`,
+last round's fix, is itself now unused by the scene. Discovery, camera
+controls, and UI behavior are all unchanged — only what the level looks
+like standing still. No learning mechanics, no menus, no localization
+system, and no monetization/backend have been implemented. See
+`Docs/ROADMAP.md` for what's next.
 
 ## Environment note
 

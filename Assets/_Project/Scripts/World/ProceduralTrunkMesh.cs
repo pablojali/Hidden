@@ -3,13 +3,17 @@ using UnityEngine;
 
 namespace Hidden.World
 {
-    // M0.10 organic-density pass: replaces a plain MESH_CYLINDER trunk
-    // with a small tapered tube that leans slightly to one side, has a
+    // A small tapered tube that leans slightly to one side, has a
     // jittered (non-circular) cross-section, and a jittered radius per
-    // ring -- the cheapest possible set of cues that read as "trunk"
-    // rather than "cylinder": taper, lean, and irregularity. Built once
-    // in Awake() from a seeded PRNG, capped on top so it isn't hollow
-    // where a canopy doesn't fully cover it.
+    // ring -- taper, lean, and irregularity read as "trunk" rather than
+    // "cylinder". Built once in Awake() from a seeded PRNG, capped on top
+    // so it isn't hollow where a canopy doesn't fully cover it.
+    //
+    // Reference-image visual correction: vertices are shared between
+    // adjacent rings/sides (one vertex per ring/side pair, not duplicated
+    // per triangle) and shading comes from Mesh.RecalculateNormals(), so
+    // the trunk reads as a smoothly rounded tube instead of a faceted
+    // polygon column.
     [RequireComponent(typeof(MeshFilter))]
     public class ProceduralTrunkMesh : MonoBehaviour
     {
@@ -61,7 +65,8 @@ namespace Hidden.World
                 sideJitter[s] = 1f + (float)(rng.NextDouble() * 2.0 - 1.0) * radiusJitter * 0.5f;
             }
 
-            var ring = new Vector3[ringCount, sides];
+            var vertices = new List<Vector3>();
+            var vertexIndex = new int[ringCount, sides];
             for (var r = 0; r < ringCount; r++)
             {
                 for (var s = 0; s < sides; s++)
@@ -69,99 +74,119 @@ namespace Hidden.World
                     var angle = (float)s / sides * Mathf.PI * 2f;
                     var radius = ringRadii[r] * sideJitter[s];
                     var local = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
-                    ring[r, s] = ringCenters[r] + local;
+                    vertexIndex[r, s] = vertices.Count;
+                    vertices.Add(ringCenters[r] + local);
                 }
             }
 
-            var vertices = new List<Vector3>();
-            var normals = new List<Vector3>();
-            var triangles = new List<int>();
+            var capCenterIndex = vertices.Count;
+            vertices.Add(ringCenters[heightSegments]);
 
+            var sideTriangles = new List<int>();
             for (var r = 0; r < heightSegments; r++)
             {
-                var axisPoint = (ringCenters[r] + ringCenters[r + 1]) / 2f;
                 for (var s = 0; s < sides; s++)
                 {
                     var sNext = (s + 1) % sides;
-                    var a = ring[r, s];
-                    var b = ring[r, sNext];
-                    var c = ring[r + 1, s];
-                    var d = ring[r + 1, sNext];
-
-                    AddTriangle(vertices, normals, triangles, a, b, c, axisPoint);
-                    AddTriangle(vertices, normals, triangles, b, d, c, axisPoint);
+                    var a = vertexIndex[r, s];
+                    var b = vertexIndex[r, sNext];
+                    var c = vertexIndex[r + 1, s];
+                    var d = vertexIndex[r + 1, sNext];
+                    sideTriangles.Add(a);
+                    sideTriangles.Add(c);
+                    sideTriangles.Add(b);
+                    sideTriangles.Add(b);
+                    sideTriangles.Add(c);
+                    sideTriangles.Add(d);
                 }
             }
 
-            AddCap(vertices, normals, triangles, ring, heightSegments, sides, ringCenters[heightSegments]);
+            var capTriangles = new List<int>();
+            for (var s = 0; s < sides; s++)
+            {
+                var sNext = (s + 1) % sides;
+                capTriangles.Add(vertexIndex[heightSegments, s]);
+                capTriangles.Add(vertexIndex[heightSegments, sNext]);
+                capTriangles.Add(capCenterIndex);
+            }
+
+            // Side and cap faces have different "correct outward"
+            // directions (radial vs. upward), so each is verified and
+            // corrected independently rather than with one combined
+            // check -- a single global vote can't guarantee both at once.
+            CorrectRadialWinding(vertices, sideTriangles, ringCenters[0], ringCenters[heightSegments]);
+            CorrectUpwardWinding(vertices, capTriangles);
+
+            var triangles = new List<int>(sideTriangles.Count + capTriangles.Count);
+            triangles.AddRange(sideTriangles);
+            triangles.AddRange(capTriangles);
 
             var mesh = new Mesh { name = $"ProceduralTrunk_{seed}" };
             mesh.SetVertices(vertices);
-            mesh.SetNormals(normals);
             mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
         }
 
-        // A side face's correct outward normal points away from the
-        // trunk's own central axis at that height (approximated by the
-        // midpoint between the two rings the face spans), not from the
-        // world origin -- so the lean doesn't throw off the winding check.
-        private static void AddTriangle(List<Vector3> vertices, List<Vector3> normals, List<int> triangles,
-            Vector3 a, Vector3 b, Vector3 c, Vector3 axisPoint)
+        // The tube's side topology is consistent throughout (either every
+        // face is backwards or none are), so winding is corrected once
+        // globally: each face votes on whether its normal points away
+        // from the trunk's own central axis at that height (approximated
+        // by the segment between the base and top ring centers); a
+        // negative vote flips every side triangle.
+        private static void CorrectRadialWinding(List<Vector3> vertices, List<int> triangles,
+            Vector3 axisBase, Vector3 axisTop)
         {
-            var normal = Vector3.Cross(b - a, c - a).normalized;
-            var faceCenter = (a + b + c) / 3f;
-            var outward = faceCenter - axisPoint;
-            outward.y = 0f;
-
-            if (Vector3.Dot(normal, outward) < 0f)
+            var voteSum = 0f;
+            for (var i = 0; i < triangles.Count; i += 3)
             {
-                (b, c) = (c, b);
-                normal = -normal;
+                var a = vertices[triangles[i]];
+                var b = vertices[triangles[i + 1]];
+                var c = vertices[triangles[i + 2]];
+                var normal = Vector3.Cross(b - a, c - a);
+                var faceCenter = (a + b + c) / 3f;
+                var t = axisTop.y > axisBase.y
+                    ? Mathf.Clamp01((faceCenter.y - axisBase.y) / (axisTop.y - axisBase.y))
+                    : 0f;
+                var axisPoint = Vector3.Lerp(axisBase, axisTop, t);
+                var outward = faceCenter - axisPoint;
+                outward.y = 0f;
+                voteSum += Vector3.Dot(normal, outward);
             }
 
-            var baseIndex = vertices.Count;
-            vertices.Add(a);
-            vertices.Add(b);
-            vertices.Add(c);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            triangles.Add(baseIndex);
-            triangles.Add(baseIndex + 1);
-            triangles.Add(baseIndex + 2);
+            if (voteSum < 0f)
+            {
+                FlipAll(triangles);
+            }
         }
 
-        // A simple fan cap over the top ring, self-corrected to face
-        // upward (a cap's only sensible outward direction) rather than
-        // radially.
-        private static void AddCap(List<Vector3> vertices, List<Vector3> normals, List<int> triangles,
-            Vector3[,] ring, int topRing, int sides, Vector3 center)
+        // The cap fan's only sensible outward direction is straight up.
+        private static void CorrectUpwardWinding(List<Vector3> vertices, List<int> triangles)
         {
-            for (var s = 0; s < sides; s++)
+            var voteSum = 0f;
+            for (var i = 0; i < triangles.Count; i += 3)
             {
-                var sNext = (s + 1) % sides;
-                var a = ring[topRing, s];
-                var b = ring[topRing, sNext];
-                var normal = Vector3.Cross(b - a, center - a).normalized;
+                var a = vertices[triangles[i]];
+                var b = vertices[triangles[i + 1]];
+                var c = vertices[triangles[i + 2]];
+                var normal = Vector3.Cross(b - a, c - a);
+                voteSum += normal.y;
+            }
 
-                if (normal.y < 0f)
-                {
-                    (a, b) = (b, a);
-                    normal = -normal;
-                }
+            if (voteSum < 0f)
+            {
+                FlipAll(triangles);
+            }
+        }
 
-                var baseIndex = vertices.Count;
-                vertices.Add(a);
-                vertices.Add(b);
-                vertices.Add(center);
-                normals.Add(normal);
-                normals.Add(normal);
-                normals.Add(normal);
-                triangles.Add(baseIndex);
-                triangles.Add(baseIndex + 1);
-                triangles.Add(baseIndex + 2);
+        private static void FlipAll(List<int> triangles)
+        {
+            for (var i = 0; i < triangles.Count; i += 3)
+            {
+                var tmp = triangles[i + 1];
+                triangles[i + 1] = triangles[i + 2];
+                triangles[i + 2] = tmp;
             }
         }
     }

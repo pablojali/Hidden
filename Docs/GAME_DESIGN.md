@@ -142,6 +142,23 @@ space around it. None of the 6 hidden things moved, and the loop plays
 exactly as before; only how full and how handmade the world looks
 changed.
 
+**A second correction followed: even the "cluster of masses" trees and
+rocks above still read as piles of visible triangles rather than actual
+objects.** The fix turned out to be less about the shapes and more about
+how they catch light — every earlier shape had a hard, faceted edge on
+every single triangle, which is what made things look "crystalline" no
+matter how organic the silhouette was underneath. Trees, bush clumps,
+mushroom caps, and flower blooms are now built as one smoothly shaded
+form each, so light wraps gradually across the surface the way it would
+on an actual rounded object instead of snapping at every edge. Rocks got
+the same treatment plus a change in *how* their irregularity is built: a
+handful of large, gentle bulges across one smooth boulder shape, instead
+of many small random bumps that used to read as gravel. Two new tiny
+details — mushrooms and flowers, each just a thin stem and a small smooth
+cap or bloom — round out the ground-detail variety the reference calls
+for. Nothing about where the 6 hidden things are, or how the loop plays,
+changed.
+
 ## Out of scope for now
 
 Character interaction, learning challenges, puzzles, rewards, progression,

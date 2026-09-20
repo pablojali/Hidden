@@ -18,15 +18,17 @@ Assets/_Project/
                   FireworkEffect, CompletionCelebration (see below)
     Levels/       LevelDefinition, LevelInfo (see below)
     UI/           DiscoveryUI (see below)
-    World/        ProceduralBlobMesh, ProceduralConeMesh (unused in the
-                  current scene), ProceduralClusterMesh, ProceduralTrunkMesh
-                  (see below); Interaction/, Learning/, Localization/ still
-                  empty placeholders for future work
+    World/        ProceduralBlobMesh, ProceduralTrunkMesh,
+                  OrganicRevolutionMesh, OrganicRockMesh (see below);
+                  ProceduralConeMesh and ProceduralClusterMesh kept but
+                  unused in the current scene; Interaction/, Learning/,
+                  Localization/ still empty placeholders for future work
     Editor/       Editor-only tooling (URP asset bootstrap, shader stripping)
   Data/
     Levels/       LevelDefinition ScriptableObject assets, one per level
   Materials/      Simple URP/Lit materials, flat colors only (M_Moss,
-                  M_Water, M_Dirt, M_TerrainSide, M_Flower added in M0.10)
+                  M_Water, M_Dirt, M_TerrainSide, M_Flower, M_Mushroom
+                  added in M0.10)
   Settings/       URP pipeline/renderer assets
 Tests/EditMode/    Structural smoke tests (scene loads, components present)
 ```
@@ -679,6 +681,104 @@ Assets/_Project/Scripts/World/ProceduralTrunkMesh.cs
   spheres, unchanged from earlier milestones, not by anything new here).
   `GameObject` count (498) is still modest for a static, non-physics
   mobile scene.
+
+### Round 2: smooth organic meshes (correcting the correction)
+
+Further explicit feedback: the round above still read as "icospheres,
+triangulated blobs, cones, angular rocks" — a collection of visible
+triangles, not a handcrafted diorama. The root cause was **flat shading**
+(unshared vertices, one hard normal per face) combined with **high-
+frequency per-vertex jitter**: every triangle in `ProceduralClusterMesh`
+was its own visibly distinct facet, and randomizing each one independently
+produced a "broken glass"/"gem cluster" look rather than a rounded organic
+form. `ProceduralClusterMesh` is now unused by the scene (0 instances),
+same treatment as `ProceduralConeMesh` before it — kept, still correct,
+still unit-tested, but superseded.
+
+```
+Assets/_Project/Scripts/World/OrganicRevolutionMesh.cs
+Assets/_Project/Scripts/World/OrganicRockMesh.cs
+```
+
+- **`OrganicRevolutionMesh`** builds ONE smooth, shared-vertex mesh by
+  revolving a hand-authored profile curve (parallel `profileHeights`/
+  `profileRadii` float arrays, serialized as ordinary YAML lists) around
+  the Y axis, sharing vertices between adjacent faces and shading via
+  `Mesh.RecalculateNormals()` — the single highest-leverage fix, since
+  smooth normals alone make even a 10-sided low-poly shape read as
+  rounded rather than faceted. Asymmetry comes from one low-frequency
+  lean/bulge direction for the whole shape (same idea as
+  `ProceduralTrunkMesh`'s lean), eased to zero at the poles, never
+  per-vertex noise. Winding is corrected once globally via a majority
+  vote across all faces (a revolved shape's topology is consistent
+  throughout, so either every face is backwards or none are — summing
+  avoids picking one possibly-degenerate pole triangle as the sole
+  sample). Three hand-authored profile presets in `gen_level01.py`
+  (`CANOPY_VARIANTS`) give three tree-canopy silhouettes (tall/narrow,
+  fuller/shorter, rounder/deciduous); two more (`BUSH_VARIANTS`) build
+  bush clumps; tiny ad hoc profiles build mushroom caps and flower
+  blooms. Reused across every placement via `emit_revolution_prop` — the
+  same small set of profiles drives every canopy/clump/cap/bloom in the
+  scene, not a structurally unique mesh per instance.
+- **`OrganicRockMesh`** builds a one-subdivision icosphere (42 vertices,
+  80 triangles, shared vertices throughout — unlike `ProceduralBlobMesh`'s
+  unshared 20-triangle blob) and displaces it with a handful (3–6) of
+  large, low-frequency "bumps": each bump pushes vertices near one random
+  direction outward (occasionally a milder inward dent) with a smooth
+  angular falloff, never per-vertex noise. Final radius is clamped well
+  above zero so stacked negative bumps can never invert the local
+  surface. Winding is corrected on the base 20 icosahedron faces *before*
+  subdivision (subdivision preserves a parent face's winding in all 4 of
+  its children, so this is sufficient for the whole sphere) — the same
+  proven per-face "outward from center" check `ProceduralBlobMesh` uses.
+  Shaded via `RecalculateNormals()`. Three reused bump/proportion presets
+  (`ROCK_VARIANTS` in `gen_level01.py`, each a `(bumpCount, bumpStrength,
+  bumpSharpness, non-uniform-scale-shape)` tuple) drive every rock, pebble,
+  terrain knoll, and the mountain's peak/base rocks — variation comes from
+  the caller's own position/rotation/scale, not from generating a new
+  mesh shape per instance.
+- **`ProceduralTrunkMesh` rewritten for smooth shading**: same public
+  `Build()` signature and triangle count as before, but vertices are now
+  shared between adjacent rings/sides (indexed once via a `[ringCount,
+  sides]` array rather than duplicated per triangle) and shading comes
+  from `RecalculateNormals()`. Side-tube and top-cap winding are corrected
+  *independently* (radially-outward vs. straight-up are genuinely
+  different "correct" directions — a single combined vote could satisfy
+  one and silently get the other backwards).
+- **Trees**: `emit_tree()` now builds each canopy from one of the three
+  `CANOPY_VARIANTS` profiles via `OrganicRevolutionMesh` (species 0/1
+  still the two pine silhouettes, species 2 the rounder deciduous one);
+  the trunk is unchanged (`ProceduralTrunkMesh`, now smooth). The
+  branch-capsule accent on pine species is unchanged.
+- **Bushes**: `emit_bush()` (was `emit_bush_cluster`) builds two
+  overlapping `OrganicRevolutionMesh` "Clump" children at a small offset
+  from `BUSH_VARIANTS` — "several overlapping volumes," never a single
+  spherical primitive standing in for the whole plant.
+- **Rocks**: `emit_rock_formation()` now builds ONE `OrganicRockMesh`
+  per named rock (was several merged `ProceduralClusterMesh` lobes);
+  `emit_pebble()` reuses the same technique at loose-stone scale.
+- **Small ground-detail variety**: `emit_flower_cluster()` (a thin stem
+  primitive + a tiny `OrganicRevolutionMesh` bloom in the new `M_Flower`
+  accent color) and the new `emit_mushroom()` (a thin stem + a tiny
+  flattened-dome `OrganicRevolutionMesh` cap in the new `M_Mushroom`
+  accent color) — both named small-vegetation variants the reference
+  brief calls out explicitly. `emit_log()` (fallen logs/branches) now
+  reuses the smooth `ProceduralTrunkMesh` laid on its side instead of a
+  plain cylinder.
+- **Terrain knolls and the mountain's `Peak`/`BaseRock`s** all switched
+  from `ProceduralClusterMesh` to `OrganicRockMesh` (knolls heavily
+  flattened via transform scale).
+- **Mobile/performance**: per-object triangle budgets stayed modest —
+  a canopy/clump/cap/bloom is one revolved mesh (roughly 60–140
+  triangles depending on ring/side count), a rock is a fixed 80-triangle
+  icosphere regardless of bump parameters (bumps only displace existing
+  vertices, never add geometry). `GameObject` count grew from 498 to 628
+  (mushrooms/extra small detail added, bushes gained a second clump
+  child each). No new shaders; two new flat-color materials (`M_Flower`,
+  `M_Mushroom`) reusing the existing URP/Lit template.
+- **Discoverable placement remains completely unchanged**: all 6 target
+  positions re-verified byte-identical to M0.8 after this regeneration
+  too.
 
 ## Input System
 

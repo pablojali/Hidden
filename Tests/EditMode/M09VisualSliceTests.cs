@@ -83,12 +83,15 @@ namespace Hidden.Tests
         }
     }
 
-    // ProceduralConeMesh is no longer used by Level_01_ForestDiorama as of
-    // the reference-image visual correction pass (tree canopies moved to
-    // ProceduralClusterMesh, per the explicit "do not use cones as trees"
-    // direction) -- kept and still unit-tested here since the component
-    // itself still exists and works, in case a future flat-topped/conical
-    // shape is wanted elsewhere.
+    // ProceduralConeMesh and ProceduralClusterMesh are no longer used by
+    // Level_01_ForestDiorama: cones were replaced by OrganicRevolutionMesh
+    // canopies (M0.10 round 2), and the merged-lobe cluster approach that
+    // replaced them in between was itself replaced by OrganicRevolutionMesh
+    // (canopies/bushes) and OrganicRockMesh (rocks) after explicit
+    // feedback that flat-shaded, high-frequency-jittered lobes still read
+    // as "faceted primitives," not organic shapes. Both scripts are kept,
+    // still correct and still unit-tested, in case a future shape wants
+    // their specific silhouette.
     public class ProceduralConeMeshTests
     {
         [Test]
@@ -152,10 +155,6 @@ namespace Hidden.Tests
         }
     }
 
-    // ProceduralClusterMesh: the core of the reference-image visual
-    // correction pass -- merges several jittered icosahedron lobes into
-    // one mesh so a canopy/bush/rock formation reads as an irregular
-    // compound mass instead of a single primitive.
     public class ProceduralClusterMeshTests
     {
         [Test]
@@ -168,59 +167,12 @@ namespace Hidden.Tests
         }
 
         [Test]
-        public void Build_DifferentSeed_ProducesDifferentShape()
-        {
-            var meshA = ProceduralClusterMesh.Build(1, 4, 0.5f, 0.3f, 0.2f, 0.8f, 0.4f, 0.3f);
-            var meshB = ProceduralClusterMesh.Build(2, 4, 0.5f, 0.3f, 0.2f, 0.8f, 0.4f, 0.3f);
-
-            CollectionAssert.AreNotEqual(meshA.vertices, meshB.vertices);
-        }
-
-        [Test]
         public void Build_TriangleAndVertexCountScaleWithLobeCount()
         {
             var mesh = ProceduralClusterMesh.Build(3, 5, 0.5f, 0.3f, 0.2f, 0.8f, 0.4f, 0.3f);
 
-            // 20 icosahedron faces per lobe, unshared vertices per lobe,
-            // merged into one mesh -- no vertex sharing between lobes.
             Assert.AreEqual(5 * 20, mesh.triangles.Length / 3);
             Assert.AreEqual(5 * 60, mesh.vertexCount);
-        }
-
-        [Test]
-        public void Build_NormalsAreUnitLength()
-        {
-            var mesh = ProceduralClusterMesh.Build(21, 3, 0.6f, 0.3f, 0.3f, 0.7f, 0.5f, 0.4f);
-
-            foreach (var normal in mesh.normals)
-            {
-                Assert.AreEqual(1f, normal.magnitude, 0.001f,
-                    "Every face normal should be unit length regardless of lobe offset/scale.");
-            }
-        }
-
-        [Test]
-        public void Build_SingleLobe_MatchesBlobMeshOutwardNormalInvariant()
-        {
-            // With lobeCount 1 and no spread/vertical offset, a cluster is
-            // exactly one lobe centered at the origin -- the same
-            // outward-normal invariant ProceduralBlobMesh checks applies.
-            var mesh = ProceduralClusterMesh.Build(9, 1, 0.5f, 0f, 0.25f, 1f, 0f, 0f);
-            var vertices = mesh.vertices;
-            var normals = mesh.normals;
-            var triangles = mesh.triangles;
-
-            for (var i = 0; i < triangles.Length; i += 3)
-            {
-                var a = vertices[triangles[i]];
-                var b = vertices[triangles[i + 1]];
-                var c = vertices[triangles[i + 2]];
-                var faceCenter = (a + b + c) / 3f;
-                var normal = normals[triangles[i]];
-
-                Assert.Greater(Vector3.Dot(normal, faceCenter), 0f,
-                    "A single centered lobe's face normals must point away from the origin.");
-            }
         }
 
         [Test]
@@ -243,7 +195,11 @@ namespace Hidden.Tests
     }
 
     // ProceduralTrunkMesh: replaces a plain MESH_CYLINDER trunk with a
-    // tapered, leaning, jittered-cross-section tube.
+    // tapered, leaning, jittered-cross-section tube. Build()'s signature
+    // and triangle/vertex counts are unchanged from earlier rounds; the
+    // implementation now shares vertices between adjacent rings/sides and
+    // shades via Mesh.RecalculateNormals() instead of flat per-face
+    // normals, so it reads as a smoothly rounded tube.
     public class ProceduralTrunkMeshTests
     {
         [Test]
@@ -271,14 +227,22 @@ namespace Hidden.Tests
         [Test]
         public void Build_TopRingSitsNearConfiguredHeight()
         {
-            // The lean offsets the top ring horizontally but its Y
-            // component is unaffected -- the tallest vertices should sit
-            // at (approximately) the configured height.
             const float height = 1.6f;
             var mesh = ProceduralTrunkMesh.Build(7, 6, 4, 0.16f, 0.06f, height, 0.1f, 0.1f);
 
             var maxY = mesh.vertices.Max(v => v.y);
             Assert.AreEqual(height, maxY, 0.01f);
+        }
+
+        [Test]
+        public void Build_NormalsAreUnitLength()
+        {
+            var mesh = ProceduralTrunkMesh.Build(2, 6, 4, 0.16f, 0.06f, 1.6f, 0.16f, 0.12f);
+
+            foreach (var normal in mesh.normals)
+            {
+                Assert.AreEqual(1f, normal.magnitude, 0.01f, "Smooth-shaded normals must be unit length.");
+            }
         }
 
         [Test]
@@ -300,12 +264,174 @@ namespace Hidden.Tests
         }
     }
 
+    // OrganicRevolutionMesh: the core of the second reference-image visual
+    // correction round. A single smooth, shared-vertex mesh revolved from
+    // a hand-authored profile curve -- replaces cones and merged jittered
+    // lobes as the shape for tree canopies, bush clumps, mushroom caps,
+    // and flower blooms. Shading comes from Mesh.RecalculateNormals()
+    // over shared vertices, not per-face flat normals.
+    public class OrganicRevolutionMeshTests
+    {
+        private static readonly float[] Heights = { 0f, 0.2f, 0.5f, 0.8f, 1.2f };
+        private static readonly float[] Radii = { 0f, 0.4f, 0.55f, 0.35f, 0f };
+
+        [Test]
+        public void Build_SameSeed_IsDeterministic()
+        {
+            var meshA = OrganicRevolutionMesh.Build(8, 10, Heights, Radii, 0.1f, 0.05f);
+            var meshB = OrganicRevolutionMesh.Build(8, 10, Heights, Radii, 0.1f, 0.05f);
+
+            CollectionAssert.AreEqual(meshA.vertices, meshB.vertices);
+        }
+
+        [Test]
+        public void Build_DifferentSeed_ProducesDifferentShape()
+        {
+            var meshA = OrganicRevolutionMesh.Build(1, 10, Heights, Radii, 0.15f, 0.08f);
+            var meshB = OrganicRevolutionMesh.Build(2, 10, Heights, Radii, 0.15f, 0.08f);
+
+            CollectionAssert.AreNotEqual(meshA.vertices, meshB.vertices);
+        }
+
+        [Test]
+        public void Build_PolesShareASingleVertexNotAFullRing()
+        {
+            // Heights/Radii both start and end at radius 0 (the poles),
+            // so vertex count = (ringCount - 2) full rings * sides + 2
+            // pole vertices, not ringCount * sides.
+            const int sides = 10;
+            var mesh = OrganicRevolutionMesh.Build(4, sides, Heights, Radii, 0.1f, 0.05f);
+
+            var expectedVertices = (Heights.Length - 2) * sides + 2;
+            Assert.AreEqual(expectedVertices, mesh.vertexCount);
+        }
+
+        [Test]
+        public void Build_NormalsAreUnitLength()
+        {
+            var mesh = OrganicRevolutionMesh.Build(6, 9, Heights, Radii, 0.12f, 0.06f);
+
+            foreach (var normal in mesh.normals)
+            {
+                Assert.AreEqual(1f, normal.magnitude, 0.01f, "Smooth-shaded normals must be unit length.");
+            }
+        }
+
+        [Test]
+        public void Awake_AssignsMeshToSiblingMeshFilter()
+        {
+            var go = new GameObject("TestRevolution");
+
+            try
+            {
+                go.AddComponent<OrganicRevolutionMesh>();
+                var filter = go.GetComponent<MeshFilter>();
+
+                Assert.IsNotNull(filter.sharedMesh, "Awake() should have assigned a generated revolution mesh.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+    }
+
+    // OrganicRockMesh: a smooth, shared-vertex icosphere (one subdivision)
+    // displaced by a handful of large, low-frequency bumps -- not
+    // per-vertex noise -- so it reads as a rounded, irregular "eroded
+    // boulder" instead of a faceted gem cluster.
+    public class OrganicRockMeshTests
+    {
+        [Test]
+        public void Build_SameSeed_IsDeterministic()
+        {
+            var meshA = OrganicRockMesh.Build(3, 4, 0.35f, 3f);
+            var meshB = OrganicRockMesh.Build(3, 4, 0.35f, 3f);
+
+            CollectionAssert.AreEqual(meshA.vertices, meshB.vertices);
+        }
+
+        [Test]
+        public void Build_DifferentSeed_ProducesDifferentShape()
+        {
+            var meshA = OrganicRockMesh.Build(1, 4, 0.35f, 3f);
+            var meshB = OrganicRockMesh.Build(2, 4, 0.35f, 3f);
+
+            CollectionAssert.AreNotEqual(meshA.vertices, meshB.vertices);
+        }
+
+        [Test]
+        public void Build_ProducesOneSubdivisionIcosphereTopology()
+        {
+            // 12 base vertices + 30 unique edge midpoints = 42 vertices,
+            // 20 base faces * 4 = 80 triangles -- fixed regardless of bump
+            // parameters, since bumps only displace existing vertices.
+            var mesh = OrganicRockMesh.Build(5, 3, 0.2f, 2f);
+
+            Assert.AreEqual(42, mesh.vertexCount);
+            Assert.AreEqual(80, mesh.triangles.Length / 3);
+        }
+
+        [Test]
+        public void Build_AllFaceNormalsPointOutwardFromCenter()
+        {
+            var mesh = OrganicRockMesh.Build(11, 5, 0.3f, 2.5f);
+            var vertices = mesh.vertices;
+            var normals = mesh.normals;
+            var triangles = mesh.triangles;
+
+            for (var i = 0; i < triangles.Length; i += 3)
+            {
+                var a = vertices[triangles[i]];
+                var b = vertices[triangles[i + 1]];
+                var c = vertices[triangles[i + 2]];
+                var faceCenter = (a + b + c) / 3f;
+                var normal = normals[triangles[i]];
+
+                Assert.Greater(Vector3.Dot(normal, faceCenter), 0f,
+                    "Every face normal must point away from the rock's own center, bumps included.");
+            }
+        }
+
+        [Test]
+        public void Build_NeverProducesADegenerateOrInvertedRadius()
+        {
+            // Several negative (dent) bumps stacking on the same vertex
+            // must never push the local radius to zero or below.
+            var mesh = OrganicRockMesh.Build(42, 6, 0.5f, 1.5f);
+
+            foreach (var vertex in mesh.vertices)
+            {
+                Assert.Greater(vertex.magnitude, 0.2f,
+                    "No vertex should collapse toward the center regardless of bump stacking.");
+            }
+        }
+
+        [Test]
+        public void Awake_AssignsMeshToSiblingMeshFilter()
+        {
+            var go = new GameObject("TestRock");
+
+            try
+            {
+                go.AddComponent<OrganicRockMesh>();
+                var filter = go.GetComponent<MeshFilter>();
+
+                Assert.IsNotNull(filter.sharedMesh, "Awake() should have assigned a generated rock mesh.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+    }
+
     public class Level01VisualSliceSceneTests
     {
         private const string ScenePath = "Assets/_Project/Scenes/Worlds/Level_01_ForestDiorama.unity";
 
         [Test]
-        public void Scene_TreesUseOrganicTrunkAndClusterCanopyNotPrimitives()
+        public void Scene_TreesUseSmoothTrunkAndRevolutionCanopyNotPrimitives()
         {
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
 
@@ -313,11 +439,6 @@ namespace Hidden.Tests
             {
                 var world = scene.GetRootGameObjects()[0];
 
-                // Reference-image visual correction pass: no tree's trunk
-                // or canopy is a single bare primitive anymore. Every
-                // "Trunk" under a tree uses ProceduralTrunkMesh (irregular,
-                // tapered, leaning) and every "Canopy" uses
-                // ProceduralClusterMesh (several merged foliage lobes).
                 // Bare trees (no canopy, by design) also have a "Trunk"
                 // child, so they're excluded from the trunk/canopy 1:1
                 // comparison below but still checked for the mesh type.
@@ -337,11 +458,14 @@ namespace Hidden.Tests
                     .Where(t => t.name == "Canopy" && t.parent != null && t.parent.parent != null
                                 && t.parent.parent.name == "Props")
                     .ToList();
-                Assert.AreEqual(canopiedTrunks.Count, canopies.Count, "Every non-bare tree should have exactly one canopy.");
+                Assert.AreEqual(canopiedTrunks.Count, canopies.Count,
+                    "Every non-bare tree should have exactly one canopy.");
                 foreach (var canopy in canopies)
                 {
-                    Assert.IsNotNull(canopy.GetComponent<ProceduralClusterMesh>(),
-                        $"{canopy.parent.name}'s Canopy should use ProceduralClusterMesh (multi-lobe foliage).");
+                    Assert.IsNotNull(canopy.GetComponent<OrganicRevolutionMesh>(),
+                        $"{canopy.parent.name}'s Canopy should use OrganicRevolutionMesh, not a cone or merged lobes.");
+                    Assert.IsNull(canopy.GetComponent<ProceduralConeMesh>());
+                    Assert.IsNull(canopy.GetComponent<ProceduralClusterMesh>());
                 }
             }
             finally
@@ -351,7 +475,7 @@ namespace Hidden.Tests
         }
 
         [Test]
-        public void Scene_RocksAndBushesAreClusterFormationsNotSinglePrimitives()
+        public void Scene_RocksAreOrganicRockMeshAndBushesAreOverlappingClumps()
         {
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
 
@@ -359,28 +483,37 @@ namespace Hidden.Tests
             {
                 var world = scene.GetRootGameObjects()[0];
 
-                // Every named "Rock*"/"ScatterRock*" and "Bush*"/
-                // "ScatterBush*" object is a multi-lobe ProceduralClusterMesh
-                // formation (emit_rock_formation/emit_bush_cluster), not a
-                // single blob standing in for the whole object.
+                // Every named "Rock*"/"ScatterRock*" object is ONE smooth
+                // OrganicRockMesh (an icosphere with a few large bumps),
+                // not several merged flat-shaded lobes and not a single
+                // faceted blob.
                 var rocks = world.GetComponentsInChildren<Transform>(true)
                     .Where(t => t.name.StartsWith("Rock_") || t.name.StartsWith("ScatterRock_"))
                     .ToList();
                 Assert.GreaterOrEqual(rocks.Count, 25, "Expected many named rock formations across the map.");
                 foreach (var rock in rocks)
                 {
-                    Assert.IsNotNull(rock.GetComponent<ProceduralClusterMesh>(),
-                        $"{rock.name} should be a ProceduralClusterMesh rock formation.");
+                    Assert.IsNotNull(rock.GetComponent<OrganicRockMesh>(),
+                        $"{rock.name} should be a single OrganicRockMesh formation.");
+                    Assert.IsNull(rock.GetComponent<ProceduralClusterMesh>());
                 }
 
+                // Every named "Bush*"/"ScatterBush*" object is a root with
+                // two "Clump_*" children, each an OrganicRevolutionMesh --
+                // several overlapping volumes, not one spherical primitive.
                 var bushes = world.GetComponentsInChildren<Transform>(true)
                     .Where(t => t.name.StartsWith("Bush_") || t.name.StartsWith("ScatterBush_"))
                     .ToList();
-                Assert.GreaterOrEqual(bushes.Count, 25, "Expected many named bush clusters across the map.");
+                Assert.GreaterOrEqual(bushes.Count, 25, "Expected many named bushes across the map.");
                 foreach (var bush in bushes)
                 {
-                    Assert.IsNotNull(bush.GetComponent<ProceduralClusterMesh>(),
-                        $"{bush.name} should be a ProceduralClusterMesh bush cluster.");
+                    var clumps = bush.Cast<Transform>().Where(c => c.name.StartsWith("Clump_")).ToList();
+                    Assert.AreEqual(2, clumps.Count, $"{bush.name} should have exactly 2 foliage clumps.");
+                    foreach (var clump in clumps)
+                    {
+                        Assert.IsNotNull(clump.GetComponent<OrganicRevolutionMesh>(),
+                            $"{bush.name}'s {clump.name} should use OrganicRevolutionMesh.");
+                    }
                 }
             }
             finally
@@ -390,7 +523,7 @@ namespace Hidden.Tests
         }
 
         [Test]
-        public void Scene_HasDenseEnvironmentalScatterAcrossFullFootprint()
+        public void Scene_HasSmallVegetationVariantsAndDenseScatterAcrossFullFootprint()
         {
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
 
@@ -400,15 +533,18 @@ namespace Hidden.Tests
                 var allTransforms = world.GetComponentsInChildren<Transform>(true);
 
                 // Density hierarchy: small-tier ground detail (pebbles,
-                // grass, flower clusters, fallen branches) should vastly
-                // outnumber the medium/large tiers, per the density
-                // hierarchy the visual correction pass asked for.
+                // grass, flower clusters, mushrooms) should vastly
+                // outnumber the medium/large tiers.
                 var pebbles = allTransforms.Count(t => t.name.Contains("Pebble"));
                 var grass = allTransforms.Count(t => t.name.Contains("Grass"));
-                var flowers = allTransforms.Count(t => t.name.Contains("Flowers"));
+                var flowers = allTransforms.Count(t => t.name.StartsWith("Flowers_")
+                    || t.name.StartsWith("ScatterFlowers_"));
+                var mushrooms = allTransforms.Count(t => t.name.StartsWith("Mushroom_")
+                    || t.name.StartsWith("ScatterMushroom_"));
                 Assert.GreaterOrEqual(pebbles, 40, "Expected dense small-stone ground detail.");
                 Assert.GreaterOrEqual(grass, 40, "Expected dense grass-tuft ground detail.");
                 Assert.GreaterOrEqual(flowers, 15, "Expected flower-cluster ground detail.");
+                Assert.GreaterOrEqual(mushrooms, 5, "Expected mushroom ground detail (a named small-vegetation variant).");
 
                 // The world should read as populated edge to edge, not just
                 // around the center: at least one Props-group object sits
@@ -441,7 +577,8 @@ namespace Hidden.Tests
                 foreach (var filter in targetMeshFilters)
                 {
                     Assert.IsNull(filter.GetComponent<ProceduralBlobMesh>());
-                    Assert.IsNull(filter.GetComponent<ProceduralClusterMesh>());
+                    Assert.IsNull(filter.GetComponent<OrganicRockMesh>());
+                    Assert.IsNull(filter.GetComponent<OrganicRevolutionMesh>());
                 }
             }
             finally
@@ -472,8 +609,6 @@ namespace Hidden.Tests
                     var head = model.Find("Head");
                     Assert.IsNotNull(head);
 
-                    // Reference-image visual pass: heads are a low-jitter
-                    // faceted blob instead of a smooth sphere.
                     Assert.IsNotNull(head.GetComponent<ProceduralBlobMesh>(),
                         $"{mover.name}'s Head should use ProceduralBlobMesh for a faceted look.");
                 }
@@ -497,8 +632,8 @@ namespace Hidden.Tests
                 Assert.IsNotNull(mountain);
                 var peak = mountain.Find("Peak");
                 Assert.IsNotNull(peak);
-                Assert.IsNotNull(peak.GetComponent<ProceduralClusterMesh>(),
-                    "The mountain's Peak should be a multi-lobe ProceduralClusterMesh mass, not one smooth blob.");
+                Assert.IsNotNull(peak.GetComponent<OrganicRockMesh>(),
+                    "The mountain's Peak should be a smooth OrganicRockMesh mass, not merged lobes.");
 
                 Assert.IsNotNull(world.transform.Find("Environment/Waterfall"));
                 Assert.IsNotNull(world.transform.Find("Environment/MountainTerrace"));
@@ -516,12 +651,16 @@ namespace Hidden.Tests
                 Assert.AreEqual(0f, dioramaBase.position.y + dioramaBase.localScale.y / 2f, 0.0001f,
                     "DioramaBase's top surface must stay at world y=0.");
 
-                // Gentle elevation variation: a handful of low terrain
-                // knolls and extra ground-texture patches away from the
-                // single flat slab this used to be.
+                // Gentle elevation variation: a handful of low, smooth
+                // terrain knolls (OrganicRockMesh, heavily flattened).
                 var knolls = world.GetComponentsInChildren<Transform>(true)
-                    .Count(t => t.name.StartsWith("TerrainKnoll_"));
-                Assert.GreaterOrEqual(knolls, 4, "Expected several gentle terrain elevation knolls.");
+                    .Where(t => t.name.StartsWith("TerrainKnoll_"))
+                    .ToList();
+                Assert.GreaterOrEqual(knolls.Count, 4, "Expected several gentle terrain elevation knolls.");
+                foreach (var knoll in knolls)
+                {
+                    Assert.IsNotNull(knoll.GetComponent<OrganicRockMesh>());
+                }
 
                 var riverSegments = world.GetComponentsInChildren<Transform>(true)
                     .Count(t => t.name.StartsWith("River_"));

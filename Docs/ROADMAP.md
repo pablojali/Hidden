@@ -312,6 +312,31 @@ road/path centerlines, and (for the bigger tiers) anything already
 placed, so nothing crowds a target or straddles a path. `GameObject`
 count grew from 256 to 498.
 
+**Further explicit feedback: the round above still read as "icospheres,
+triangulated blobs, cones, angular rocks" — a collection of visible
+triangles, not a handcrafted diorama.** The root cause was flat shading
+(a hard normal per face) combined with high-frequency per-vertex jitter,
+which made every triangle its own visible facet. Two new generators fix
+this at the source: `OrganicRevolutionMesh` builds ONE smooth,
+shared-vertex mesh by revolving a hand-authored profile curve (shaded via
+`Mesh.RecalculateNormals()`, the single highest-leverage change), and
+`OrganicRockMesh` builds a smooth icosphere displaced by a few large,
+low-frequency bumps rather than per-vertex noise. `ProceduralClusterMesh`
+— the previous round's fix — is now itself unused by the scene, same
+treatment `ProceduralConeMesh` got before it: kept, still correct, but
+superseded. Every tree canopy, bush clump, named rock, pebble, terrain
+knoll, and the mountain's peak/base rocks now use one of these two smooth
+generators, each reused across every placement from a small set of
+hand-authored presets (three canopy profiles, two bush-clump profiles,
+three rock bump/proportion presets) rather than a structurally unique
+mesh per instance. Two new small ground-detail variants were added,
+matching the reference brief's own list: flower clusters (a stem plus a
+tiny smooth bloom in a new `M_Flower` accent color) and mushrooms (a stem
+plus a tiny smooth cap in a new `M_Mushroom` accent color); fallen
+logs/branches now reuse the smooth trunk mesh laid on its side instead of
+a plain cylinder. `GameObject` count grew from 498 to 628. All 6 target
+positions were re-verified byte-identical to M0.8 yet again.
+
 Discoverable target positions (re-verified byte-identical to M0.8 after
 every regeneration), the camera's own controls, and the minimal UI/
 discovery/completion-celebration systems are all untouched throughout —
