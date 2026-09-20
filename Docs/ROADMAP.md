@@ -288,6 +288,30 @@ reasonably warm from earlier milestones, and adding an AO Renderer
 Feature by hand, with no Editor to verify it against, was judged too
 risky relative to its payoff here.
 
+**A visual-correction round followed explicit feedback that the result
+still read as primitive shapes rather than a handcrafted diorama, and
+that the world was too sparse and too centered.** Two new generators,
+`ProceduralClusterMesh` (merges several jittered lobes into one organic
+compound mass) and `ProceduralTrunkMesh` (a tapered, leaning, irregular
+tube), replace primitives as the *final* visible shape for trees, bushes,
+and rocks — a cone is no longer a tree, a single blob is no longer a
+whole rock or bush, and a plain cylinder is no longer a finished trunk.
+Trees are now trunk + multi-lobe canopy (+ a branch for the pine
+species); bushes and named rocks are small multi-lobe clusters; the
+mountain's peak and base rocks use the same technique. `ProceduralConeMesh`
+is no longer used anywhere in the scene as a result, though the script and
+its tests remain. The terrain itself gained gentle elevation variation
+(6 low knolls, more recessed hollows, a couple of ground-texture patches).
+A deterministic, exclusion-aware scatter pass then filled the rest of the
+playable footprint — edges, corners, riverbanks, road/path edges, the
+rocky mountain base — with more trees/bushes/rocks and a large amount of
+small-tier ground detail (pebbles, grass, and a new `M_Flower`-accented
+flower cluster), instead of leaving density concentrated near the
+center; every new point is checked against the 6 targets, the river/
+road/path centerlines, and (for the bigger tiers) anything already
+placed, so nothing crowds a target or straddles a path. `GameObject`
+count grew from 256 to 498.
+
 Discoverable target positions (re-verified byte-identical to M0.8 after
 every regeneration), the camera's own controls, and the minimal UI/
 discovery/completion-celebration systems are all untouched throughout —

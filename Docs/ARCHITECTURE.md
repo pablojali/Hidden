@@ -18,14 +18,15 @@ Assets/_Project/
                   FireworkEffect, CompletionCelebration (see below)
     Levels/       LevelDefinition, LevelInfo (see below)
     UI/           DiscoveryUI (see below)
-    World/        ProceduralBlobMesh, ProceduralConeMesh (see below);
-                  Interaction/, Learning/, Localization/ still empty
-                  placeholders for future work
+    World/        ProceduralBlobMesh, ProceduralConeMesh (unused in the
+                  current scene), ProceduralClusterMesh, ProceduralTrunkMesh
+                  (see below); Interaction/, Learning/, Localization/ still
+                  empty placeholders for future work
     Editor/       Editor-only tooling (URP asset bootstrap, shader stripping)
   Data/
     Levels/       LevelDefinition ScriptableObject assets, one per level
   Materials/      Simple URP/Lit materials, flat colors only (M_Moss,
-                  M_Water, M_Dirt, M_TerrainSide added in M0.10)
+                  M_Water, M_Dirt, M_TerrainSide, M_Flower added in M0.10)
   Settings/       URP pipeline/renderer assets
 Tests/EditMode/    Structural smoke tests (scene loads, components present)
 ```
@@ -581,6 +582,103 @@ Assets/_Project/Scripts/World/ProceduralConeMesh.cs
   and `MountainTerrace` added two; the tree-species mix and faceted heads
   changed component wiring, not object count) — still well below M02's
   original prototype footprint.
+
+### Visual correction pass: organic geometry + environmental density
+
+A follow-up round on the same M0.10 milestone, triggered by explicit
+feedback that the result above still read as "primitive shapes" (cones as
+trees, single blobs as rocks/bushes) rather than a handcrafted diorama,
+and that the world was too sparse and too centered. Two new generators
+replace primitives as the *final* visible geometry for trees/bushes/
+rocks; primitives now only ever appear as minor accents (a branch
+capsule, a fallen log) on top of already-organic shapes.
+
+```
+Assets/_Project/Scripts/World/ProceduralClusterMesh.cs
+Assets/_Project/Scripts/World/ProceduralTrunkMesh.cs
+```
+
+- **`ProceduralClusterMesh`** merges several jittered-icosahedron lobes
+  (the same per-lobe shape `ProceduralBlobMesh` uses) into ONE mesh, at
+  randomized per-lobe offset/radius/height. Three parameter presets, one
+  component: a tree **canopy** (`emit_cluster_prop` inside `emit_tree`,
+  4–5 lobes biased to stack upward for layered depth), a **bush**
+  (`emit_bush_cluster`, 4 lobes spread low and wide, little vertical
+  stacking), and a **rock formation** (`emit_rock_formation`, 3 lobes,
+  higher jitter, minimal vertical stacking so lobes sit side by side).
+  Winding is self-corrected per lobe in the lobe's own local space (the
+  same "outward from this shape's own center" check `ProceduralBlobMesh`
+  uses), not the cluster's combined space, since a lobe far from the
+  cluster's overall center would otherwise get the wrong answer. Still
+  cheap: a handful of 20-triangle lobes merged into one draw call, built
+  once in `Awake()`.
+- **`ProceduralTrunkMesh`** replaces the plain `MESH_CYLINDER` trunk
+  (every tree, plus `emit_bare_tree`) with a small tapered tube that
+  leans slightly to one side (strongest partway up, eased with a sine)
+  and has a jittered, non-circular cross-section — taper + lean +
+  irregularity being the cheapest cues that read as "trunk" rather than
+  "cylinder." Capped on top so it isn't hollow from a low camera angle.
+  Larger/pine-species trees also get one small branch capsule breaking
+  the trunk/canopy line (still a primitive, but only ever an accent on
+  an already-organic trunk+canopy, never the tree's own silhouette).
+- **`ProceduralConeMesh` is no longer used anywhere in the scene** as of
+  this pass — replaced by `ProceduralClusterMesh` canopies per the
+  explicit "do not use cones as trees" direction. The script and its
+  tests are kept (still correct, still potentially useful for some other
+  conical shape later) but nothing currently references it.
+- **The mountain's `Peak`** switched from a single large blob to a
+  6-lobe `ProceduralClusterMesh` mass; its `BaseRock` accents switched
+  from single blobs to `emit_rock_formation` calls, same as every other
+  named rock.
+- **Terrain elevation variation**: 6 low, wide, heavily flattened
+  `ProceduralClusterMesh` "knolls" (`TerrainKnoll_01..06`) scattered
+  across open ground as gentle rises, plus 4 more recessed
+  `GroundHollow_` patches (mossy/dirt, same flattened-cylinder technique
+  as the original `MossyHollow`) and 2 `GroundPatch_` ground-texture
+  accents — all shallow enough to never disturb the y=0 surface every
+  prop's position assumes.
+- **Dense environmental scatter** (`Assets/_Project/Scripts/World/` — no
+  new script, this is generator logic in `gen_level01.py`): a
+  deterministic (fixed-seed `random.Random`) rejection-sampling pass
+  fills the rest of the ~40×40 playable footprint — edges, corners,
+  riverbanks, road/path edges, the rocky mountain base — instead of
+  leaving everything clustered near the center. Exclusion checks keep
+  every new point clear of the 6 targets (1.4 units), the river/road/
+  path centerlines (1.3–2.2 units), and (for the medium/large tier only)
+  anything already placed, tracked in a single `PLACED_FOOTPRINTS`
+  list of `(x, z, radius)` every hand-placed and scattered object
+  registers itself into as it's emitted. Small-tier detail (pebbles,
+  grass, flower clusters) is deliberately allowed to sit close to or
+  under bigger elements — that's how real ground detail actually
+  clusters — so it skips the footprint check.
+  - Medium/large tier: 14 `ScatterTree_`, 20 `ScatterBush_`, 16
+    `ScatterRock_`, 10 `ScatterBranch_` (fallen logs, two simple
+    90°-lay orientations, no quaternion composition needed).
+  - Small tier: 45 `ScatterPebble_` (`emit_pebble`, a single tiny blob —
+    appropriately simple at stone scale), 40 `ScatterGrass_` (unchanged
+    single-blob technique), 18 `ScatterFlowers_` (`emit_flower_cluster`,
+    two tiny lobes in a new accent material, `M_Flower`, kept visually
+    distinct from every green in the palette so a bloom doesn't read as
+    another leaf).
+  - Combined with the hand-placed content, the scene now has 43 tree
+    trunks (37 canopied + 6 bare), 37 canopies, 30 named rock
+    formations, 29 bush clusters, and well over 100 small-tier ground
+    details — `GameObject` count grew from 256 to 498.
+- **Discoverable placement is still completely unchanged**: all 6 target
+  positions re-verified byte-identical to M0.8 after this regeneration
+  too; discovery uses distance + viewport visibility only
+  (`requireLineOfSight: 0`), so denser surrounding geometry changes what
+  a target looks hidden behind, never whether it's mechanically
+  discoverable.
+- **Mobile/performance**: every new mesh is still built once in
+  `Awake()` from a handful of merged 20-triangle lobes or a small tapered
+  tube (roughly 50–150 triangles per compound object) — no textures, no
+  new shaders, no per-frame cost. Total scene triangle count is in the
+  low tens of thousands (dominated by Unity's own built-in sphere
+  primitive on the 6 targets and the 24 firework/celebration spark
+  spheres, unchanged from earlier milestones, not by anything new here).
+  `GameObject` count (498) is still modest for a static, non-physics
+  mobile scene.
 
 ## Input System
 

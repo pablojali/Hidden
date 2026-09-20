@@ -61,7 +61,9 @@ Assets/
                     FireworkEffect (M0.7), CompletionCelebration (M0.9)
       Levels/       LevelDefinition, LevelInfo (M0.8)
       UI/           DiscoveryUI (M0.6, trimmed in M0.7)
-      World/        ProceduralBlobMesh, ProceduralConeMesh (M0.10)
+      World/        ProceduralBlobMesh, ProceduralConeMesh (unused in the
+                    current scene), ProceduralClusterMesh,
+                    ProceduralTrunkMesh (M0.10)
       Interaction/  (empty placeholder — future interaction systems)
       Learning/     (empty placeholder — future learning-challenge systems)
       Localization/ (empty placeholder — future localization systems)
@@ -78,9 +80,10 @@ Tests/
 
 The still-empty folders (Interaction, Learning, Localization) exist so
 those future systems can be added without restructuring the project. They
-intentionally contain no code yet. `World/` holds `ProceduralBlobMesh`
-and `ProceduralConeMesh` as of M0.10; `UI/` holds `DiscoveryUI` as of
-M0.6.
+intentionally contain no code yet. `World/` holds `ProceduralBlobMesh`,
+`ProceduralConeMesh` (no longer referenced by the current scene),
+`ProceduralClusterMesh`, and `ProceduralTrunkMesh` as of M0.10; `UI/`
+holds `DiscoveryUI` as of M0.6.
 
 ## Development
 
@@ -159,15 +162,17 @@ camera is structured.
    camera as M02. The opening view is wide: the whole diorama should read
    as one small miniature world at a glance, not a close-in crop of part
    of it, while the 6 hidden things still aren't obviously visible from
-   there. The geometry itself is no longer bare primitives: rocks,
-   bushes, and grass tufts are gently irregular faceted shapes, tree
-   canopies are mostly low-poly pine cones with a rounder deciduous shape
-   mixed in among them, the house has a chimney/door/window, the two
-   moving figures have arms, a backpack, and a subtly faceted head, and
-   the ground is a thick two-tone block (a warm tan/gold side beneath the
-   green top) rather than a flat sheet, with a bit more color variation
-   (including a small mossy hollow near the hill). The map is also about
-   50% bigger and noticeably
+   there. The geometry itself is no longer bare primitives: trees have a
+   tapered, slightly leaning trunk and a multi-lobe foliage canopy (not a
+   cone or a cylinder), rocks and bushes are each a small cluster of
+   irregular masses (not a single blob or cube), the house has a
+   chimney/door/window, the two moving figures have arms, a backpack, and
+   a subtly faceted head, and the ground is a thick two-tone block (a
+   warm tan/gold side beneath the green top) rather than a flat sheet,
+   with gentle elevation knolls and a bit more color variation (including
+   a small mossy hollow near the hill). The map is also about 50% bigger,
+   reaches every edge and corner rather than staying clustered near the
+   center, and is noticeably
    busier: a mountain on the right side has a waterfall feeding a river
    that winds across the newly opened ground to a small dock and boat,
    two dirt roads connect the original clearing out toward both, and
@@ -350,9 +355,20 @@ still: the ground is now a thick two-tone block with visible sides
 stays at world y=0), the mountain steps up from a `MountainTerrace`, about
 a third of the trees now use a rounder deciduous canopy mixed in among
 the pines, and the two moving characters' heads switched from a smooth
-sphere to a subtly faceted `ProceduralBlobMesh` to match. Discovery,
-camera controls, and UI behavior are all unchanged — only what the level
-looks like standing still. No learning mechanics, no menus, no
+sphere to a subtly faceted `ProceduralBlobMesh` to match. A final
+correction round replaced primitives as the *final* visible shape
+entirely: trees are now a tapered/leaning `ProceduralTrunkMesh` trunk
+plus a multi-lobe `ProceduralClusterMesh` canopy (no more cones), and
+every named rock and bush is a small multi-lobe cluster instead of a
+single blob — `ProceduralConeMesh` is no longer used anywhere in the
+scene as a result. The world is also considerably fuller and reaches
+every edge of the map now, not just the center: a deterministic,
+exclusion-aware scatter pass added many more trees/bushes/rock
+formations plus a large amount of small ground detail (pebbles, grass,
+flower clusters) along the riverbank, around the mountain, and out to
+the map's corners, alongside a few gentle terrain elevation knolls.
+Discovery, camera controls, and UI behavior are all unchanged — only what
+the level looks like standing still. No learning mechanics, no menus, no
 localization system, and no monetization/backend have been implemented.
 See `Docs/ROADMAP.md` for what's next.
 

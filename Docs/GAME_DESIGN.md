@@ -123,6 +123,25 @@ so the whole cast of shapes — terrain, plants, and characters alike —
 shares one consistent "cut from simple polygons by hand" language rather
 than characters being the one perfectly smooth thing in a faceted world.
 
+**A follow-up correction pushed further still, on direct feedback that
+the world still looked like Unity primitives standing in for real
+objects rather than an actual handcrafted diorama.** A tree is no longer
+one cone on a cylinder: its trunk now tapers and leans a little to one
+side like a real trunk would, and its canopy is several overlapping
+clumps of foliage at different sizes and heights instead of one smooth
+shape. Bushes and rocks are the same idea at a smaller scale — a bush
+reads as a cluster of leafy masses, a rock as a cluster of angular ones,
+never a single sphere-like primitive standing in for the whole thing.
+The world itself is also considerably fuller and reaches every corner of
+the map now, not just the middle: many more trees, bushes, and rock
+formations are scattered along the riverbank, around the mountain's
+base, and out toward the map's edges, plus a large amount of small
+ground detail — loose stones, grass, and small flowers — so the terrain
+reads as a complete little ecosystem rather than a clearing with empty
+space around it. None of the 6 hidden things moved, and the loop plays
+exactly as before; only how full and how handmade the world looks
+changed.
+
 ## Out of scope for now
 
 Character interaction, learning challenges, puzzles, rewards, progression,
