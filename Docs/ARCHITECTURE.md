@@ -780,6 +780,38 @@ Assets/_Project/Scripts/World/OrganicRockMesh.cs
   positions re-verified byte-identical to M0.8 after this regeneration
   too.
 
+### Round 3: targeted fixes from a real screenshot comparison
+
+The user compared an actual gameplay screenshot against the reference
+image directly and flagged three concrete, specific problems — the first
+time in this project's history that real rendered output (not just
+generated YAML) could be checked against intent:
+
+- **Canopies rounded off into a ball/pom-pom instead of a point.** The
+  `CANOPY_VARIANTS` profiles tapered too gradually near the top (e.g. a
+  0.4→0.58→0 radius change spread across 1.5 world units of height), and
+  with smooth shading a gradual taper reads as rounded, not pointed. All
+  three profiles were rewritten with a short, steep final segment (the
+  last ring's radius drops to 0 over a small height delta, e.g. 0.08→0
+  over 0.15 units) so the silhouette comes to an actual spike. The third
+  profile, previously a rounder "deciduous" shape the reference doesn't
+  actually show, became a third pine-pointed size variant instead.
+- **The river and dirt roads read as "rectangular pieces placed on the
+  floor"** — literally true: each was a chain of straight flat boxes
+  meeting at sharp mitered corners. `gen_level01.py` gained
+  `_resample_smooth()`, a Catmull-Rom spline interpolation of the
+  original waypoint list (4 interpolated segments per original gap), so
+  `emit_water_path`/`emit_dirt_road` now build many short segments that
+  approximate a continuous curve instead of a few long straight ones.
+  River: 8 waypoints → 28 segments (was 7). Each road: ~4 waypoints → 16
+  segments (was 4).
+- **`emit_house()` rebuilt.** The single diamond-rotated roof box is
+  replaced with two thin roof slabs meeting at a real ridge line (each
+  slab's pitch and mirrored rotation derived from actual eave/ridge
+  coordinates, not eyeballed) plus a ridge cap covering the seam, and a
+  stone-colored (`M_Rock`) foundation course under the walls so the
+  house reads as sitting on/in the ground rather than floating on it.
+
 ## Input System
 
 `Packages/manifest.json` already includes `com.unity.inputsystem`, and

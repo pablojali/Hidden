@@ -337,6 +337,20 @@ logs/branches now reuse the smooth trunk mesh laid on its side instead of
 a plain cylinder. `GameObject` count grew from 498 to 628. All 6 target
 positions were re-verified byte-identical to M0.8 yet again.
 
+**A direct screenshot-vs-reference comparison then caught three specific,
+concrete problems.** Tree canopies still rounded off into a ball instead
+of a point (the profile tapered too gradually near the top); the river
+and dirt roads visibly read as chained straight rectangular pieces with
+sharp mitered joints; and the house's single diamond-rotated roof box
+plus ungrounded walls looked flat and floating. All three were fixed
+directly: canopy profiles now end in a short, steep spike; the river/
+roads are now Catmull-Rom-smoothed into many short segments (the river
+went from 7 straight segments to 28 curved ones) instead of a few long
+straight ones; and the house gained a real two-slope gable roof (with a
+ridge cap hiding the seam) plus a stone foundation course. `GameObject`
+count grew from 628 to 676. All 6 target positions were, once again,
+re-verified byte-identical to M0.8.
+
 Discoverable target positions (re-verified byte-identical to M0.8 after
 every regeneration), the camera's own controls, and the minimal UI/
 discovery/completion-celebration systems are all untouched throughout —
