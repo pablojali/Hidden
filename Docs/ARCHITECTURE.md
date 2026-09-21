@@ -939,3 +939,68 @@ applied two changes directly to `Level_01_ForestDiorama.unity`:
   across the full git history and does not exist in this repository. This
   round's changes were applied directly to the compiled scene for that
   reason — there is currently no generator script to edit instead.
+
+## World expansion: dense forest, mountain range, camping zone (M0.10.3)
+
+`Scripts/Editor/WorldExpansionBuilder.cs` (Editor-only, not shipped) is a
+layout-level continuation of the same "no generator script exists, edit
+the compiled scene directly" approach as M0.10.2, built to be **safely
+re-runnable**: `RemovePreviousRun()` deletes everything a previous
+`Apply()` call added (by name prefix: `Densify_*`, `MountainRange_*`,
+`MountainTerrace_*`, `CampingZone`) before generating again, so tuning a
+parameter and re-running never compounds or duplicates content — this
+mattered in practice, since the first pass's mountain-range placement
+needed several rounds of separation-distance tuning before it reliably
+found spots along the already-densely-populated east edge.
+
+- **Footprint-based rejection sampling**: a single `List<(x, z, radius)>`
+  is populated up front from the 6 targets (radius 3), the house (radius
+  7), and every existing prop under `Props`/`Environment`/`Paths`
+  (radius from that prop's own `Renderer.bounds`, skipping anything with
+  `radius > 15` so the huge `DioramaBase`/`TerrainBase` ground slabs don't
+  register as an all-blocking footprint). Every new placement — mountain
+  cluster, camp clearing, scattered tree/bush/rock/detail — checks against
+  this same list via `IsClear()` and registers its own footprint before
+  the next item is placed, the same technique `ARCHITECTURE.md`'s
+  M0.10 "Round 1" scatter pass used originally.
+- **Mountain range**: clones the existing `Mountain` (left exactly where
+  it was, so `Waterfall`/the river's attachment point is untouched) at up
+  to 7 more points along the same east edge (`x` in `[11, 21]`, full `z`
+  range), via up to `7 * 150` rejection-sampling attempts at a modest
+  `2.5`-unit minimum separation — the east edge already had a dense
+  pre-existing "right tree cluster" (M0.10's own history) plus this
+  round's own new scatter, so a stricter separation (tried first at 8.5,
+  then 5) consistently found 0-1 valid spots; some visual overlap with
+  small existing trees at the mountain's foot is expected and reads fine
+  (trees at the base of a mountain). Each cluster gets its own
+  `MountainTerrace` clone and a random `0.7-1.15` uniform scale for
+  varied peak heights.
+- **Camping zone**: `TryFindOpenSpot` searches the west side (`x` up to
+  `-2`) for a `5`-unit-radius clearing, rather than a fixed coordinate —
+  the first version used a hardcoded position and one tent ended up
+  overlapping a pre-existing tree. Once a clear center is found: two tent
+  meshes (`BuildTentMesh()`, a hand-built 6-triangle flat-shaded
+  triangular prism — a wedge, not a cone or a box, since Unity has no
+  built-in prism primitive — with the same geometric self-correcting
+  winding check every procedural generator in this project uses), a new
+  `M_Tent` material, a campfire (6 small `Rock_01` clones ringed at
+  radius 0.7, 2 crossed trunk "logs" reusing `ScatterTree_01`'s own
+  `Trunk` child), and one more trunk clone laid on its side as a log seat.
+- **`CloneReseeded`/`Reseed`**: clones a template GameObject, then walks
+  every `OrganicRevolutionMesh`/`OrganicRockMesh`/`ProceduralTrunkMesh` in
+  its hierarchy via `SerializedObject` and assigns a fresh random `seed`
+  before calling that component's own `Rebuild()` — so each placement is
+  fresh geometry from the same generator, not a visually-identical
+  repositioned duplicate. `ScatterPebble_01`/`ScatterGrass_01`/
+  `ScatterFlowers_01` (the small ground-detail tier) turned out to already
+  be built on `OrganicRockMesh`/`OrganicRevolutionMesh` like everything
+  else — `ProceduralBlobMesh`/`ProceduralConeMesh`/`ProceduralClusterMesh`
+  have zero live instances anywhere in this scene (confirmed by grepping
+  the scene file for their `.cs.meta` GUIDs), consistent with the M0.10
+  history noting each was superseded in turn but kept.
+- **Density pass**: ~355 additional placements across trees (footprint
+  radius 1.05), bushes (0.65), rocks (0.55), and a small-detail tier
+  (pebbles/grass/flowers, radius 0.3, deliberately smaller so it settles
+  into whatever gaps remain rather than competing with the bigger tiers
+  for space) — all capped to `x < 13` so the general forest scatter stays
+  off the new mountain range's edge strip.

@@ -443,6 +443,49 @@ the reference's are a taller straight-sided cone — a smaller follow-up,
 not a shading problem). All 76 EditMode tests still pass; compilation
 stayed clean.
 
+## M0.10.3 — World expansion: dense forest, mountain range, camping zone — done
+
+A layout-level pass on `Level_01_ForestDiorama`, requested directly:
+cover the whole plane in forest, turn the single mountain cluster into a
+proper range along one edge, and add distinct zones (a house area already
+existed; this adds a camping area) rather than one clearing in an
+otherwise mostly-open field.
+
+Built by `Scripts/Editor/WorldExpansionBuilder.cs`, a one-off,
+safely-re-runnable Editor tool (not shipped) — the same "edit the compiled
+scene directly" approach M0.10.2 used, since `gen_level01.py` still isn't
+in this repository. It clones already-verified prop hierarchies
+(`ScatterTree_01`, `ScatterBush_01`, `ScatterRock_01`, the pebble/grass/
+flower templates, and the `Mountain` cluster itself) and reseeds their
+procedural mesh components for variety, rather than re-deriving generation
+logic from scratch.
+
+- **Mountain range**: the existing `Mountain` (kept exactly where it was,
+  so `Waterfall`/the river's source point is untouched) is joined by 3
+  more clusters spread along the same east edge via rejection sampling
+  against every other prop already in the scene, each with its own
+  `MountainTerrace` step and a randomized scale/seed. Reads as a range
+  running the length of that border instead of one blob in a corner.
+- **Forest density**: ~355 additional trees/bushes/rocks/pebbles/grass/
+  flowers, placed by rejection sampling across the whole ~44x44 playable
+  area (checked against the 6 targets, the house, every existing prop,
+  the new mountain range, and the new camping clearing, so nothing
+  overlaps or crowds a target). Combined with the existing content, the
+  ground now reads as fully forested rather than having large open gaps.
+- **Camping zone**: a new small clearing on the opposite (west) side from
+  the mountain range — two flat-shaded tent wedges (a small new mesh
+  built directly in the tool, plus a new `M_Tent` material), a campfire
+  (a ring of small rocks with two crossed "log" trunks in the middle),
+  and a log to sit on. A second distinct, human-made area alongside the
+  house, the same way the reference brief asked for "zonas como de casa o
+  de camping."
+- All 6 target positions, the camera, and every discovery/UI system are
+  completely untouched — this round only added content around the
+  existing core, per the pattern every M0.10 round has followed.
+
+All 76 EditMode tests still pass; compilation stayed clean. See
+`ARCHITECTURE.md` for the tool's exact placement/exclusion logic.
+
 ## M0.11+ — not started
 
 The dive-in interaction, the learning-challenge system, localization,
