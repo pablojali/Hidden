@@ -32,6 +32,14 @@ namespace Hidden.World
         [SerializeField] private float[] profileRadii = { 0f, 0.5f, 0f };
         [SerializeField] private float asymmetry = 0.12f;
         [SerializeField] private float radiusJitter = 0.05f;
+        // Reference-image correction: the reference's low-poly look uses a
+        // small number of large, flat-shaded facets, not a smooth gradient
+        // -- smooth shading was the earlier fix for a different problem
+        // (high-frequency per-vertex jitter reading as "broken glass"), not
+        // a rejection of faceting itself. False by default so every
+        // existing caller/test keeps its original shared-vertex/smooth
+        // topology unless explicitly opted in.
+        [SerializeField] private bool flatShaded;
 
         private void Awake()
         {
@@ -45,11 +53,11 @@ namespace Hidden.World
         public void Rebuild()
         {
             GetComponent<MeshFilter>().sharedMesh =
-                Build(seed, sides, profileHeights, profileRadii, asymmetry, radiusJitter);
+                Build(seed, sides, profileHeights, profileRadii, asymmetry, radiusJitter, flatShaded);
         }
 
         public static Mesh Build(int seed, int sides, float[] profileHeights, float[] profileRadii,
-            float asymmetry, float radiusJitter)
+            float asymmetry, float radiusJitter, bool flatShaded = false)
         {
             var rng = new System.Random(seed);
             var ringCount = profileHeights.Length;
@@ -146,12 +154,34 @@ namespace Hidden.World
 
             CorrectGlobalWinding(vertices, triangles);
 
+            if (flatShaded)
+            {
+                Unshare(vertices, triangles);
+            }
+
             var mesh = new Mesh { name = $"OrganicRevolution_{seed}" };
             mesh.SetVertices(vertices);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        // Duplicates one vertex per triangle corner so no vertex is shared
+        // between adjacent faces -- RecalculateNormals() then produces one
+        // flat normal per face instead of an averaged smooth one, without
+        // needing to compute/assign normals by hand.
+        private static void Unshare(List<Vector3> vertices, List<int> triangles)
+        {
+            var unshared = new List<Vector3>(triangles.Count);
+            for (var i = 0; i < triangles.Count; i++)
+            {
+                unshared.Add(vertices[triangles[i]]);
+                triangles[i] = i;
+            }
+
+            vertices.Clear();
+            vertices.AddRange(unshared);
         }
 
         // A revolved shape's topology is consistent throughout (either

@@ -400,6 +400,49 @@ correctly. No content/design changes were made from this pass alone —
 that's for the next round, once compared directly against the reference
 image.
 
+## M0.10.2 — First reference-image comparison from a real render — done
+
+The first round of visual feedback against an actual rendered screenshot
+(M0.10.1's `DiagnosticSceneCapture` output) compared directly to a new
+reference image, rather than against scene YAML. Two concrete deltas were
+fixed; see `ARCHITECTURE.md` for detail.
+
+**Trees, rocks, bushes, and other `World/` organic props switched to flat
+shading.** The reference's low-poly look uses a small number of large,
+flat-shaded facets — visually distinct from the smooth, gradient-shaded
+look `OrganicRevolutionMesh`/`OrganicRockMesh` have used since M0.10's
+"Round 2". That smooth-shading change fixed a real problem (high-frequency
+per-vertex jitter reading as "broken glass"), but it wasn't a rejection of
+faceting itself — the reference confirms flat shading is correct *when*
+the mesh has few, regular facets. Both generators gained an opt-in
+`flatShaded` field (default off, so every other caller/test is
+unaffected); a one-off Editor tool
+(`Scripts/Editor/ReferenceStyleUpdater.cs`) enabled it on all 126
+`OrganicRevolutionMesh` and 94 `OrganicRockMesh` instances in
+`Level_01_ForestDiorama` and dialed down their lean/jitter for a more
+regular, reference-like silhouette. `Tools/SceneGeneration/gen_level01.py`,
+referenced in earlier conversation as the scene's source generator, is
+**not actually present in this repository** (checked the full git history
+— it was never committed) — this round edited the compiled scene directly
+via an Editor script instead, since that's the only real "source" that
+exists to edit.
+
+**Dirt roads restyled to read as paved roads**, matching the reference's
+dark asphalt-with-yellow-dashed-centerline look instead of the existing
+flat tan dirt color. A new dedicated `M_Road` material (dark, desaturated)
+replaces `M_Dirt` on the road segments specifically — `M_Dirt` itself was
+untouched because `MountainTerrace` and some `GroundHollow_` patches also
+use it and were never meant to look like asphalt. A new `M_RoadLine`
+material and small flat boxes reusing each road segment's own transform
+(skipping every other segment) add the dashed centerline.
+
+Not attempted this round: the reference's small triangular water-flow
+decals on the river (lower priority, purely decorative); further canopy
+silhouette tuning (current canopies read as a rounded dome with a point,
+the reference's are a taller straight-sided cone — a smaller follow-up,
+not a shading problem). All 76 EditMode tests still pass; compilation
+stayed clean.
+
 ## M0.11+ — not started
 
 The dive-in interaction, the learning-challenge system, localization,

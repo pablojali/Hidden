@@ -63,7 +63,7 @@ namespace Hidden.EditorTools
             var changed = false;
             foreach (var rootObject in scene.GetRootGameObjects())
             {
-                var camera = rootObject.GetComponentInChildren<Camera>(true);
+                var camera = rootObject.GetComponentInChildren<UnityEngine.Camera>(true);
                 if (camera == null)
                 {
                     continue;

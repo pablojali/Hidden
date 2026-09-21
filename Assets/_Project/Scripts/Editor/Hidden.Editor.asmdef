@@ -2,6 +2,7 @@
     "name": "Hidden.Editor",
     "rootNamespace": "Hidden.EditorTools",
     "references": [
+        "Hidden.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.RenderPipelines.Universal.Editor",
         "Unity.RenderPipelines.Core.Runtime",

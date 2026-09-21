@@ -25,6 +25,10 @@ namespace Hidden.World
         [SerializeField] private int bumpCount = 4;
         [SerializeField] private float bumpStrength = 0.35f;
         [SerializeField] private float bumpSharpness = 3f;
+        // Reference-image correction: see OrganicRevolutionMesh's flatShaded
+        // for why -- false by default so every existing caller/test keeps
+        // its original shared-vertex/smooth topology unless opted in.
+        [SerializeField] private bool flatShaded;
 
         private void Awake()
         {
@@ -37,10 +41,12 @@ namespace Hidden.World
         // Initialize()). Exposed publicly so tests can drive it directly.
         public void Rebuild()
         {
-            GetComponent<MeshFilter>().sharedMesh = Build(seed, bumpCount, bumpStrength, bumpSharpness);
+            GetComponent<MeshFilter>().sharedMesh =
+                Build(seed, bumpCount, bumpStrength, bumpSharpness, flatShaded);
         }
 
-        public static Mesh Build(int seed, int bumpCount, float bumpStrength, float bumpSharpness)
+        public static Mesh Build(int seed, int bumpCount, float bumpStrength, float bumpSharpness,
+            bool flatShaded = false)
         {
             var rng = new System.Random(seed);
             var (vertices, triangles) = BuildIcosphere();
@@ -73,12 +79,33 @@ namespace Hidden.World
                 vertices[i] = dir * radius;
             }
 
+            if (flatShaded)
+            {
+                Unshare(vertices, triangles);
+            }
+
             var mesh = new Mesh { name = $"OrganicRock_{seed}" };
             mesh.SetVertices(vertices);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        // Duplicates one vertex per triangle corner so no vertex is shared
+        // between adjacent faces -- RecalculateNormals() then produces one
+        // flat normal per face instead of an averaged smooth one.
+        private static void Unshare(List<Vector3> vertices, List<int> triangles)
+        {
+            var unshared = new List<Vector3>(triangles.Count);
+            for (var i = 0; i < triangles.Count; i++)
+            {
+                unshared.Add(vertices[triangles[i]]);
+                triangles[i] = i;
+            }
+
+            vertices.Clear();
+            vertices.AddRange(unshared);
         }
 
         private static Vector3 RandomUnitVector(System.Random rng)

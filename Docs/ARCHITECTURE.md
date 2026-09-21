@@ -890,3 +890,52 @@ with an actual Editor rather than inferred from YAML.
   in both scenes). This is also Editor/screenshot-tool-only: Play Mode and
   real Player builds already compute the ambient probe automatically at
   startup, which is why it was never visible on device either.
+
+## Reference-image style correction (M0.10.2)
+
+The first round of feedback against a real rendered screenshot (previous
+rounds only ever had scene YAML to compare against a reference image).
+`Scripts/Editor/ReferenceStyleUpdater.cs` is a one-off Editor tool (not
+part of the shipped game, same category as `DiagnosticSceneCapture`) that
+applied two changes directly to `Level_01_ForestDiorama.unity`:
+
+- **`flatShaded` field on `OrganicRevolutionMesh`/`OrganicRockMesh`**,
+  default `false`. When true, `Build()` duplicates one vertex per triangle
+  corner (`Unshare()`) before `RecalculateNormals()`, so no vertex is
+  shared between adjacent faces and each face gets its own flat normal
+  instead of an averaged smooth one — the standard trick for flat shading
+  without hand-computing normals. This is a straight reuse of the same
+  technique `ProceduralBlobMesh`/`ProceduralConeMesh` already use (their
+  vertices were always unshared per-face); the smooth generators just
+  gained the option to opt back into it per-instance. `ReferenceStyleUpdater`
+  enabled it on every instance in the scene via `SerializedObject` (safe,
+  undo/Inspector-correct field access from an Editor script) and called
+  each component's existing `Rebuild()` (see "Editor verification" above)
+  to regenerate the mesh immediately, rather than waiting for the next
+  domain reload.
+- **`M_Road` and `M_RoadLine` materials** (new, both flat-color
+  `Universal Render Pipeline/Lit`, no textures — consistent with the
+  project's existing material approach). `ReferenceStyleUpdater` reassigns
+  every `RoadToMountain_*`/`RoadToDock_*` segment's `MeshRenderer.sharedMaterial`
+  from `M_Dirt` to `M_Road`, and for every other segment (a simple
+  index-parity check, for the dashed-line look) spawns a thin
+  `M_RoadLine`-colored child box reusing that segment's own `MeshFilter`
+  (the shared builtin Cube), position, and rotation, sized from the
+  segment's own `Renderer.bounds` so it sits exactly on the road surface
+  regardless of the segment's own scale/rotation math. `M_Dirt` itself was
+  deliberately left untouched: `MountainTerrace` and some `GroundHollow_`
+  patches also reference it and were never meant to look like asphalt.
+- **`Hidden.Editor.asmdef` now references `Hidden.Runtime`** (previously
+  it didn't need to) so Editor tooling can call into `Hidden.World` types
+  directly. This surfaced a latent namespace collision: `Hidden.Camera`
+  (the project's own camera-system namespace) and `UnityEngine.Camera`
+  share the name `Camera`, so any Editor script using the bare `Camera`
+  identifier became ambiguous once both namespaces were in scope —
+  `DiagnosticSceneCapture.cs` and the pre-existing `ProjectFoundationSetup.cs`
+  both needed their `Camera` references qualified to `UnityEngine.Camera`
+  to keep compiling.
+- **Note**: `Tools/SceneGeneration/gen_level01.py`, described in
+  conversation as this scene's source-of-truth generator, was searched for
+  across the full git history and does not exist in this repository. This
+  round's changes were applied directly to the compiled scene for that
+  reason — there is currently no generator script to edit instead.

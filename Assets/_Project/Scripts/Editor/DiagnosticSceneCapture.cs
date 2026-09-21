@@ -27,10 +27,10 @@ namespace Hidden.EditorTools
 
             DynamicGI.UpdateEnvironment();
 
-            var cam = Camera.main;
+            var cam = UnityEngine.Camera.main;
             if (cam == null)
             {
-                foreach (var c in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))
+                foreach (var c in Object.FindObjectsByType<UnityEngine.Camera>(FindObjectsSortMode.None))
                 {
                     cam = c;
                     break;
