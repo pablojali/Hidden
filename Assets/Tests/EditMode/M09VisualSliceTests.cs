@@ -70,6 +70,7 @@ namespace Hidden.Tests
             try
             {
                 var blob = go.AddComponent<ProceduralBlobMesh>();
+                blob.Rebuild();
                 var filter = go.GetComponent<MeshFilter>();
 
                 Assert.IsNotNull(filter, "ProceduralBlobMesh requires a MeshFilter.");
@@ -143,7 +144,8 @@ namespace Hidden.Tests
 
             try
             {
-                go.AddComponent<ProceduralConeMesh>();
+                var cone = go.AddComponent<ProceduralConeMesh>();
+                cone.Rebuild();
                 var filter = go.GetComponent<MeshFilter>();
 
                 Assert.IsNotNull(filter.sharedMesh, "Awake() should have assigned a generated cone mesh.");
@@ -182,7 +184,8 @@ namespace Hidden.Tests
 
             try
             {
-                go.AddComponent<ProceduralClusterMesh>();
+                var cluster = go.AddComponent<ProceduralClusterMesh>();
+                cluster.Rebuild();
                 var filter = go.GetComponent<MeshFilter>();
 
                 Assert.IsNotNull(filter.sharedMesh, "Awake() should have assigned a generated cluster mesh.");
@@ -252,7 +255,8 @@ namespace Hidden.Tests
 
             try
             {
-                go.AddComponent<ProceduralTrunkMesh>();
+                var trunk = go.AddComponent<ProceduralTrunkMesh>();
+                trunk.Rebuild();
                 var filter = go.GetComponent<MeshFilter>();
 
                 Assert.IsNotNull(filter.sharedMesh, "Awake() should have assigned a generated trunk mesh.");
@@ -324,7 +328,8 @@ namespace Hidden.Tests
 
             try
             {
-                go.AddComponent<OrganicRevolutionMesh>();
+                var revolution = go.AddComponent<OrganicRevolutionMesh>();
+                revolution.Rebuild();
                 var filter = go.GetComponent<MeshFilter>();
 
                 Assert.IsNotNull(filter.sharedMesh, "Awake() should have assigned a generated revolution mesh.");
@@ -414,7 +419,8 @@ namespace Hidden.Tests
 
             try
             {
-                go.AddComponent<OrganicRockMesh>();
+                var rock = go.AddComponent<OrganicRockMesh>();
+                rock.Rebuild();
                 var filter = go.GetComponent<MeshFilter>();
 
                 Assert.IsNotNull(filter.sharedMesh, "Awake() should have assigned a generated rock mesh.");

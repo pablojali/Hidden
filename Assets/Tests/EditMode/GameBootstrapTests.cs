@@ -13,7 +13,8 @@ namespace Hidden.Tests
 
             try
             {
-                go.AddComponent<GameBootstrap>();
+                var bootstrap = go.AddComponent<GameBootstrap>();
+                bootstrap.Initialize();
 
                 Assert.AreEqual(60, Application.targetFrameRate);
             }

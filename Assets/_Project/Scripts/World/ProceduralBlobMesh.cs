@@ -15,6 +15,10 @@ namespace Hidden.World
     // and never rebuilt at runtime -- no per-frame cost, and the vertex
     // count (20 triangles = 60 verts, unshared for flat shading) stays
     // small enough that dozens of instances remain mobile-cheap.
+    // ExecuteAlways: without it, Awake() never runs outside Play Mode, so
+    // the mesh would only appear once you press Play (or in a build),
+    // leaving the Scene view empty while editing/browsing the level.
+    [ExecuteAlways]
     [RequireComponent(typeof(MeshFilter))]
     public class ProceduralBlobMesh : MonoBehaviour
     {
@@ -23,6 +27,15 @@ namespace Hidden.World
         [SerializeField] private float verticalSquash = 1f;
 
         private void Awake()
+        {
+            Rebuild();
+        }
+
+        // Unity does not call Awake() for a plain (non-ExecuteAlways)
+        // MonoBehaviour outside Play Mode, so EditMode tests can't rely on
+        // AddComponent triggering it (same reason CharacterMover exposes
+        // Initialize()). Exposed publicly so tests can drive it directly.
+        public void Rebuild()
         {
             GetComponent<MeshFilter>().sharedMesh = Build(seed, jitter, verticalSquash);
         }

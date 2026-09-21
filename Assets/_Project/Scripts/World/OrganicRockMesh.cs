@@ -14,6 +14,10 @@ namespace Hidden.World
     // via Mesh.RecalculateNormals(). Different proportions/sizes between
     // instances come from the caller's own non-uniform Transform scale,
     // not from the mesh itself.
+    // ExecuteAlways: without it, Awake() never runs outside Play Mode, so
+    // the mesh would only appear once you press Play (or in a build),
+    // leaving the Scene view empty while editing/browsing the level.
+    [ExecuteAlways]
     [RequireComponent(typeof(MeshFilter))]
     public class OrganicRockMesh : MonoBehaviour
     {
@@ -23,6 +27,15 @@ namespace Hidden.World
         [SerializeField] private float bumpSharpness = 3f;
 
         private void Awake()
+        {
+            Rebuild();
+        }
+
+        // Unity does not call Awake() for a plain (non-ExecuteAlways)
+        // MonoBehaviour outside Play Mode, so EditMode tests can't rely on
+        // AddComponent triggering it (same reason CharacterMover exposes
+        // Initialize()). Exposed publicly so tests can drive it directly.
+        public void Rebuild()
         {
             GetComponent<MeshFilter>().sharedMesh = Build(seed, bumpCount, bumpStrength, bumpSharpness);
         }

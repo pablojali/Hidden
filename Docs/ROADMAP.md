@@ -364,6 +364,42 @@ original core (clearing, house, all 6 targets) still plays exactly as
 before — none of that is claimed here, only that the geometry, materials,
 and discovery system are all present, wired, and internally consistent.
 
+## M0.10.1 — First real Unity Editor verification — done
+
+The first time this project was opened in an actual Unity Editor, after
+being built entirely blind (hand-authored YAML, validated only by
+structural checks and CI compilation — see the README's "Environment
+note"). Compilation was clean (zero errors/warnings on import) and both
+`Bootstrap.unity` and `Level_01_ForestDiorama.unity` open and render with
+no missing-script or missing-reference errors in the Console. See
+`ARCHITECTURE.md` for what this pass found and fixed.
+
+**`Tests/EditMode/` moved to `Assets/Tests/EditMode/`.** Unity only
+compiles/discovers code under `Assets/` or `Packages/` — the old location,
+a sibling of `Assets/`, meant all 9 EditMode test files were invisible to
+Unity and had never actually run since they were written (`0 tests`
+discovered in batchmode, not a failure — the suite genuinely didn't exist
+to Unity). Fixed with `git mv`; no test content changed. All 76 tests now
+run for real, in Unity's own Test Runner, for the first time.
+
+**A real Editor-vs-blind-authoring gap in `Awake()` timing** made 7 of
+those 76 tests fail once they could finally run — see `ARCHITECTURE.md`
+for the root cause and fix (a small `Initialize()`/`Rebuild()` method per
+component, mirroring `CharacterMover.Initialize()`'s existing pattern, plus
+`[ExecuteAlways]` on the six `World/` mesh generators so their geometry is
+visible in the Scene view without pressing Play). All 76 tests pass after
+the fix. This was never a gameplay bug — Play Mode and real builds already
+ran `Awake()` correctly, which is why it never showed up on device.
+
+**First real rendered screenshots** of `Level_01_ForestDiorama` were
+captured (a small Editor-only diagnostic tool,
+`Scripts/Editor/DiagnosticSceneCapture.cs`, opens a scene and renders the
+Main Camera to a PNG) instead of inferring appearance from scene YAML.
+Recognizable: the house, river, dirt roads, forest, and mountain all read
+correctly. No content/design changes were made from this pass alone —
+that's for the next round, once compared directly against the reference
+image.
+
 ## M0.11+ — not started
 
 The dive-in interaction, the learning-challenge system, localization,

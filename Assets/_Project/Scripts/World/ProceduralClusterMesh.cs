@@ -14,6 +14,10 @@ namespace Hidden.World
     // silhouette instead of a single smooth/faceted primitive, while
     // staying cheap: a handful of 20-triangle lobes merged into one draw
     // call, built once in Awake(), never rebuilt.
+    // ExecuteAlways: without it, Awake() never runs outside Play Mode, so
+    // the mesh would only appear once you press Play (or in a build),
+    // leaving the Scene view empty while editing/browsing the level.
+    [ExecuteAlways]
     [RequireComponent(typeof(MeshFilter))]
     public class ProceduralClusterMesh : MonoBehaviour
     {
@@ -27,6 +31,15 @@ namespace Hidden.World
         [SerializeField] private float verticalSpread = 0.3f;
 
         private void Awake()
+        {
+            Rebuild();
+        }
+
+        // Unity does not call Awake() for a plain (non-ExecuteAlways)
+        // MonoBehaviour outside Play Mode, so EditMode tests can't rely on
+        // AddComponent triggering it (same reason CharacterMover exposes
+        // Initialize()). Exposed publicly so tests can drive it directly.
+        public void Rebuild()
         {
             GetComponent<MeshFilter>().sharedMesh = Build(
                 seed, lobeCount, baseRadius, radiusVariance, jitter, verticalSquash, spreadRadius, verticalSpread);

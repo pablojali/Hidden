@@ -14,6 +14,10 @@ namespace Hidden.World
     // per triangle) and shading comes from Mesh.RecalculateNormals(), so
     // the trunk reads as a smoothly rounded tube instead of a faceted
     // polygon column.
+    // ExecuteAlways: without it, Awake() never runs outside Play Mode, so
+    // the mesh would only appear once you press Play (or in a build),
+    // leaving the Scene view empty while editing/browsing the level.
+    [ExecuteAlways]
     [RequireComponent(typeof(MeshFilter))]
     public class ProceduralTrunkMesh : MonoBehaviour
     {
@@ -27,6 +31,15 @@ namespace Hidden.World
         [SerializeField] private float leanAmount = 0.12f;
 
         private void Awake()
+        {
+            Rebuild();
+        }
+
+        // Unity does not call Awake() for a plain (non-ExecuteAlways)
+        // MonoBehaviour outside Play Mode, so EditMode tests can't rely on
+        // AddComponent triggering it (same reason CharacterMover exposes
+        // Initialize()). Exposed publicly so tests can drive it directly.
+        public void Rebuild()
         {
             GetComponent<MeshFilter>().sharedMesh = Build(
                 seed, sides, heightSegments, baseRadius, topRadius, height, radiusJitter, leanAmount);

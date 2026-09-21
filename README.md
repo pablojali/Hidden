@@ -68,16 +68,22 @@ Assets/
       Interaction/  (empty placeholder — future interaction systems)
       Learning/     (empty placeholder — future learning-challenge systems)
       Localization/ (empty placeholder — future localization systems)
-      Editor/       Editor-only tooling (URP/material bootstrap)
+      Editor/       Editor-only tooling (URP/material bootstrap,
+                    DiagnosticSceneCapture)
     Data/
       Levels/       LevelDefinition assets, one per level (M0.8)
     Settings/       URP pipeline/renderer assets
     Resources/      Runtime-loaded resources (currently empty)
+  Tests/
+    EditMode/       EditMode smoke tests (GameBootstrap, M0.2-M0.10)
   ThirdParty/       Reserved for third-party assets (currently empty)
 Docs/               ROADMAP, GAME_DESIGN, ARCHITECTURE
-Tests/
-  EditMode/         EditMode smoke tests (GameBootstrap, M0.2-M0.10)
 ```
+
+`Tests/` lives under `Assets/` (moved from the repo root in M0.10.1) —
+Unity only compiles/discovers code under `Assets/` or `Packages/`, so the
+old root-level location meant the whole EditMode suite was invisible to
+Unity. See `Docs/ROADMAP.md`'s M0.10.1 entry.
 
 The still-empty folders (Interaction, Learning, Localization) exist so
 those future systems can be added without restructuring the project. They
@@ -390,7 +396,14 @@ This foundation (and the M0.2-M0.10 scenes/scripts) were authored in a headless
 environment without a Unity Editor or Unity command-line tooling installed,
 so the project files could not be opened, compiled, or run by Unity itself
 before committing. All project, scene, and settings files were hand-authored
-to Unity's standard YAML/asset formats. **Before relying on this project,
-open it once in Unity 6000.3.0f1 (or the closest 6000.3.x LTS patch) to let
-Unity import assets and resolve packages**, then verify Play Mode and the
-build platforms as described above.
+to Unity's standard YAML/asset formats.
+
+**Update (M0.10.1): this has now been done once.** The project opened
+cleanly in Unity 6000.3.0f1 with zero compile errors/warnings and no
+missing-script/missing-reference errors in either scene. Two real gaps
+this blind-authoring approach couldn't have caught were found and fixed —
+see `Docs/ROADMAP.md`'s M0.10.1 entry and `Docs/ARCHITECTURE.md`'s "Editor
+verification" section. Still pending: Play Mode and the build platforms
+haven't been verified since that fix, and the result hasn't been compared
+against the reference image yet — do that next before trusting this
+project further.

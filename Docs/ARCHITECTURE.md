@@ -30,7 +30,7 @@ Assets/_Project/
                   M_Water, M_Dirt, M_TerrainSide, M_Flower, M_Mushroom
                   added in M0.10)
   Settings/       URP pipeline/renderer assets
-Tests/EditMode/    Structural smoke tests (scene loads, components present)
+Assets/Tests/EditMode/  Structural smoke tests (scene loads, components present)
 ```
 
 Each scene is self-contained: opening it and pressing Play should work with
@@ -495,7 +495,7 @@ Assets/_Project/Scripts/World/ProceduralConeMesh.cs
   the contrast between "perfect geometric shape" (something to find) and
   "organic faceted prop" (environment) is a readability choice, not an
   oversight; `Level01VisualSliceSceneTests` in
-  `Tests/EditMode/M09VisualSliceTests.cs` asserts a target's own mesh
+  `Assets/Tests/EditMode/M09VisualSliceTests.cs` asserts a target's own mesh
   never has a `ProceduralBlobMesh` on it.
 - **House**: the M0.2/M0.8 wall-box-plus-diamond-roof gained a `Chimney`
   (a small offset box, `M_Roof`), a `Door` (a thin box, `M_Bark`), and a
@@ -826,3 +826,67 @@ URP 17.6.0, one `UniversalRenderPipelineAsset` (`URP-Mobile`, created and
 committed from the real Unity Editor — see `M0.1` history for why a
 script-generated one was not reliable on device). Materials are flat-color
 `Universal Render Pipeline/Lit`, no textures, kept mobile-lightweight.
+
+## Editor verification (M0.10.1)
+
+The project's first real open in Unity 6000.3.0f1, after being built
+entirely blind. Two issues were found and fixed; both are now provable
+with an actual Editor rather than inferred from YAML.
+
+- **`Awake()` does not run outside Play Mode for a plain (non-
+  `[ExecuteAlways]`) `MonoBehaviour`** — confirmed empirically (a throwaway
+  probe component logged nothing, and a field it set stayed `false`, after
+  both `AddComponent` and a `[UnityTest]` frame-yield). This is the same
+  limitation `CharacterMover.Initialize()` was already built to work around
+  for `Start()` (see "Character architecture" above) — it turns out `Awake()`
+  has it too. It silently broke 7 of the 76 EditMode tests once the
+  `Tests/` → `Assets/Tests/` move (below) let them run for the first
+  time: `GameBootstrapTests` and all six `World/` mesh-generator
+  `Awake_AssignsMeshToSiblingMeshFilter` tests (`ProceduralBlobMesh`,
+  `ProceduralConeMesh`, `ProceduralClusterMesh`, `ProceduralTrunkMesh`,
+  `OrganicRevolutionMesh`, `OrganicRockMesh`). Fixed the same way
+  `CharacterMover` already established: each component's `Awake()` now
+  just calls a public `Initialize()` (`GameBootstrap`) or `Rebuild()` (the
+  six mesh generators) method that tests call directly instead of relying
+  on lifecycle timing. Production behavior is unchanged — `Awake()` still
+  does the same work, just via one extra indirection.
+- **The six `World/` mesh generators also gained `[ExecuteAlways]`.**
+  Without it, none of their meshes would appear until Play Mode — opening
+  `Level_01_ForestDiorama.unity` and just looking at it in the Scene view
+  (not pressing Play) would show an almost-empty diorama: no trees, rocks,
+  bushes, mountain, or terrain knolls, since `Awake()` never ran to
+  generate them. This never affected the shipped game (Play Mode and real
+  builds always ran `Awake()` normally), only the Editor-browsing
+  experience — but that's exactly what matters now that the project is
+  meant to be iterated on directly in the Editor. Each `Awake()` still
+  only runs once per domain reload/scene load (cheap, matching every
+  generator's existing "build once" mobile-performance note); `[ExecuteAlways]`
+  does not add any per-frame cost since none of these components have an
+  `Update()`.
+- **`Tests/EditMode/` moved to `Assets/Tests/EditMode/`.** Unity only
+  compiles/discovers assets under `Assets/` or `Packages/`; the previous
+  location was a sibling of `Assets/` at the repo root, so all 9 test
+  files and the `Hidden.Tests.EditMode.asmdef` were invisible to Unity — a
+  batchmode test run found and ran exactly 0 tests, silently, with no
+  error. Moved with `git mv`, no test content changed by the move itself.
+- **Running EditMode tests from the command line**:
+  `Unity.exe -batchmode -projectPath <path> -runTests -testPlatform
+  EditMode -testResults <path>.xml -logFile <path>.txt`, deliberately
+  **without** `-quit` — `-runTests` already quits on its own once the run
+  completes, and a `-quit` passed alongside it can race and terminate
+  Unity before the test run (and its result-file write) actually happens.
+  Unity's own process re-launches a child process and returns immediately
+  on Windows, so the caller needs to poll for the child process/result
+  file rather than trust the launcher's own exit code.
+- **`Scripts/Editor/DiagnosticSceneCapture.cs`** is a small Editor-only
+  tool (not part of the shipped game) that opens a scene and renders the
+  Main Camera's actual view to a PNG via `-executeMethod`, so real
+  rendered output can be captured and inspected/compared headlessly
+  instead of guessing from scene YAML. It also calls
+  `DynamicGI.UpdateEnvironment()` before rendering — without it, any
+  surface facing away from the single directional light renders solid
+  black, because this project has never been opened in an Editor before
+  and so has no baked ambient/GI probe (`m_LightingDataAsset: {fileID: 0}`
+  in both scenes). This is also Editor/screenshot-tool-only: Play Mode and
+  real Player builds already compute the ambient probe automatically at
+  startup, which is why it was never visible on device either.
